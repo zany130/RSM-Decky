@@ -158,25 +158,33 @@ def pull_existing_clones_for_catalog(
     catalog: list[dict[str, str]],
     *,
     timeout: float = 300.0,
-) -> list[str]:
+) -> dict[str, object]:
     """
     For each entry in ``catalog``, if ``paths.repo_clone_dir(id)`` already has
     ``.git``, run ``git pull``. Missing clones are skipped (no clone).
 
-    Returns a list of ``\"<repo_id>: <message>\"`` for failures; empty if every
-    pull succeeded or there was nothing to pull.
+    Returns pull stats:
+    - ``attempted_count``
+    - ``updated_count``
+    - ``failures`` (list of ``\"<repo_id>: <message>\"``)
     """
     failures: list[str] = []
+    attempted = 0
     for r in catalog:
-        rid = r.get("id", "").strip()
+        rid = str(r.get("id", "")).strip()
         url = (r.get("git_url") or "").strip()
         if not rid or not url:
             continue
         d = paths.repo_clone_dir(rid)
         if not (d / ".git").exists():
             continue
+        attempted += 1
         try:
             clone_or_pull(d, url, pull=True, timeout=timeout)
         except Exception as e:  # noqa: BLE001
             failures.append(f"{rid}: {e}")
-    return failures
+    return {
+        "attempted_count": attempted,
+        "updated_count": max(0, attempted - len(failures)),
+        "failures": failures,
+    }

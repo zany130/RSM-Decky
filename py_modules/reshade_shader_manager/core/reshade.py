@@ -293,7 +293,12 @@ def install_reshade(
     Does not create or edit ``ReShade.ini`` (ReShade manages that at runtime). Does not clear
     shader symlinks or ``enabled_repo_ids``.
     """
-    api = GraphicsAPI(graphics_api)
+    try:
+        api = GraphicsAPI(graphics_api)
+    except ValueError as e:
+        raise RSMError(f"Invalid graphics API: {graphics_api!r}") from e
+    if variant not in {"standard", "addon"}:
+        raise RSMError(f"Invalid ReShade variant: {variant!r}")
 
     game_dir = canonical_game_dir(manifest.game_dir)
     if not game_dir.is_dir():

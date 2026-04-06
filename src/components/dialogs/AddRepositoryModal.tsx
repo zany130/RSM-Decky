@@ -15,6 +15,17 @@ type AddRepositoryModalProps = {
   onSubmit: (form: AddRepositoryForm) => Promise<void>;
 };
 
+const REPO_ID_RE = /^[a-z0-9][a-z0-9_-]*$/;
+
+function isLikelyHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") && parsed.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 const AddRepositoryModal = ({ closeModal, onSubmit }: AddRepositoryModalProps) => {
   const [repoId, setRepoId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -24,7 +35,10 @@ const AddRepositoryModal = ({ closeModal, onSubmit }: AddRepositoryModalProps) =
   const [busy, setBusy] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const canSubmit = repoId.trim().length > 0 && displayName.trim().length > 0 && gitUrl.trim().length > 0;
+  const repoIdClean = repoId.trim().toLowerCase();
+  const displayNameClean = displayName.trim();
+  const gitUrlClean = gitUrl.trim();
+  const canSubmit = repoIdClean.length > 0 && displayNameClean.length > 0 && gitUrlClean.length > 0;
 
   const submit = async () => {
     if (!canSubmit || busy) {
@@ -33,12 +47,20 @@ const AddRepositoryModal = ({ closeModal, onSubmit }: AddRepositoryModalProps) =
     setBusy(true);
     setErrorText(null);
     try {
+      if (!REPO_ID_RE.test(repoIdClean)) {
+        setErrorText("Repository ID must be lowercase and contain only letters, numbers, _ or -.");
+        return;
+      }
+      if (!isLikelyHttpUrl(gitUrlClean)) {
+        setErrorText("Git URL must be a valid http(s) URL.");
+        return;
+      }
       await onSubmit({
-        repoId,
-        displayName,
-        gitUrl,
-        author,
-        description,
+        repoId: repoIdClean,
+        displayName: displayNameClean,
+        gitUrl: gitUrlClean,
+        author: author.trim(),
+        description: description.trim(),
       });
       closeModal?.();
     } catch (e: unknown) {

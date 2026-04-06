@@ -76,10 +76,11 @@ class RsmDeckyService:
             if (paths.repo_clone_dir(rid) / ".git").exists():
                 existing_repo_ids.append(rid)
 
-        failures = pull_existing_clones_for_catalog(paths, shader_cat)
+        pull_stats = pull_existing_clones_for_catalog(paths, shader_cat)
+        failures = pull_stats.get("failures", [])
         return {
             "existing_clone_count": len(existing_repo_ids),
-            "updated_count": max(0, len(existing_repo_ids) - len(failures)),
+            "updated_count": int(pull_stats.get("updated_count", 0)),
             "failures": failures,
         }
 
