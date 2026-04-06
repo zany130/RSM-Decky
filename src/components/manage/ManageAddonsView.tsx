@@ -23,6 +23,9 @@ type AddonsPreflightResult = {
   pending_install_ids: string[];
   pending_uninstall_ids: string[];
   arch: string;
+  incompatible_count: number;
+  incompatible_names: string[];
+  incompatible_reason: string;
 };
 
 type AddonsApplyResult = {
@@ -79,6 +82,9 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
   const [baseline, setBaseline] = useState<Set<string>>(new Set());
   const [desired, setDesired] = useState<Set<string>>(new Set());
   const [gameArch, setGameArch] = useState<string>("");
+  const [incompatibleCount, setIncompatibleCount] = useState(0);
+  const [incompatibleNames, setIncompatibleNames] = useState<string[]>([]);
+  const [incompatibleReason, setIncompatibleReason] = useState("");
 
   const loadPreflight = async (desiredIds?: string[]) => {
     const selected = desiredIds ?? Array.from(desired);
@@ -87,6 +93,9 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
       [...res.rows].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
     );
     setGameArch(res.arch);
+    setIncompatibleCount(res.incompatible_count || 0);
+    setIncompatibleNames(Array.isArray(res.incompatible_names) ? res.incompatible_names : []);
+    setIncompatibleReason(res.incompatible_reason || "");
     const base = new Set(res.baseline_ids);
     setBaseline(base);
     if (desiredIds) {
@@ -207,6 +216,16 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
           <PanelSectionRow>
             <div style={{ opacity: 0.8, fontSize: "12px" }}>
               Showing add-ons compatible with game architecture: {gameArch === "64" ? "x64" : "x86"}
+            </div>
+          </PanelSectionRow>
+        )}
+        {incompatibleCount > 0 && (
+          <PanelSectionRow>
+            <div style={{ opacity: 0.8, fontSize: "12px" }}>
+              {incompatibleCount} add-on{incompatibleCount === 1 ? "" : "s"} hidden due to architecture
+              mismatch.
+              {incompatibleReason ? ` ${incompatibleReason}` : ""}
+              {incompatibleNames.length ? ` Examples: ${incompatibleNames.join(", ")}.` : ""}
             </div>
           </PanelSectionRow>
         )}

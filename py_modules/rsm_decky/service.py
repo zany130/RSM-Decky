@@ -205,6 +205,7 @@ class RsmDeckyService:
         arch = m.reshade_arch
         by_id = {str(r.get("id", "")).strip().lower(): r for r in addon_cat}
         installable_ids: set[str] = set()
+        incompatible_names: list[str] = []
 
         rows: list[dict] = []
         for row in addon_cat:
@@ -213,6 +214,7 @@ class RsmDeckyService:
                 continue
             ok, reason = installability_detail(row, arch=arch)
             if not ok:
+                incompatible_names.append(str(row.get("name", rid)))
                 continue
             installable_ids.add(rid)
             rows.append(
@@ -252,6 +254,9 @@ class RsmDeckyService:
             "pending_install_ids": pending_install,
             "pending_uninstall_ids": pending_uninstall,
             "arch": arch,
+            "incompatible_count": len(incompatible_names),
+            "incompatible_names": sorted(incompatible_names)[:3],
+            "incompatible_reason": "Hidden because incompatible with current game architecture.",
         }
 
     def addons_apply(self, game_dir: str, desired_addon_ids: list[str]) -> dict:
