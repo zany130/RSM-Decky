@@ -1,11 +1,10 @@
 {
   "name": "RSM-Decky",
-  "author": "RSM-Decky",
-  "flags": ["debug"],
+  "author": "zany130",
   "api_version": 1,
   "publish": {
-    "tags": ["utility", "reshade"],
-    "description": "Per-game ReShade management (reshade-shader-manager core) for Steam games.",
+    "tags": ["utility", "reshade", "shaders", "addons"],
+    "description": "Per-game ReShade, shader repository, and add-on management for Steam games.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
   }
 }

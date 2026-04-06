@@ -1,16 +1,16 @@
 import { definePlugin, staticClasses } from "@decky/ui";
 import { routerHook } from "@decky/api";
-import { FaFlask } from "react-icons/fa";
+import { FaSlidersH } from "react-icons/fa";
 
 import contextMenuPatch, { LibraryContextMenu } from "./patch";
 import RSMDeckyRoot from "./views/RSMDeckyRoot";
 
-const SPIKE_ROUTE = "/rsm-decky/:appid";
+const RSM_ROUTE = "/rsm-decky/:appid";
 
 export default definePlugin(() => {
   const menuPatches = contextMenuPatch(LibraryContextMenu);
 
-  routerHook.addRoute(SPIKE_ROUTE, RSMDeckyRoot, { exact: true });
+  routerHook.addRoute(RSM_ROUTE, RSMDeckyRoot, { exact: true });
 
   return {
     name: "RSM-Decky",
@@ -20,9 +20,9 @@ export default definePlugin(() => {
         Open a game in your library → ⋯ menu → <b>RSM-Decky</b> to launch the per-game view.
       </div>
     ),
-    icon: <FaFlask />,
+    icon: <FaSlidersH />,
     onDismount() {
-      routerHook.removeRoute(SPIKE_ROUTE);
+      routerHook.removeRoute(RSM_ROUTE);
       menuPatches?.unpatch();
     },
   };

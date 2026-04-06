@@ -18,7 +18,7 @@ import {
 } from "@decky/ui";
 import type { FC } from "react";
 
-const MENU_KEY = "rsm-decky-spike";
+const MENU_KEY = "rsm-decky-menu-item";
 
 const spliceMenuItem = (children: any[], appid: number) => {
   const propertiesMenuItemIdx = children.findIndex((item) =>

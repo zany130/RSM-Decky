@@ -1,31 +1,33 @@
 {
-  "name": "decky-plugin-template",
-  "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "name": "rsm-decky",
+  "version": "0.1.1",
+  "description": "Decky plugin for per-game ReShade, shader repository, and add-on management.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install:decky": "bash scripts/install-local.sh"
+    "install:decky": "bash scripts/install-local.sh",
+    "build:release": "bash scripts/build-release.sh"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/zany130/RSM-Decky.git"
   },
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
     "steam-deck",
-    "deck"
+    "reshade",
+    "shader",
+    "addons"
   ],
-  "author": "You <you@you.tld>",
+  "author": "zany130",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/zany130/RSM-Decky/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/zany130/RSM-Decky#readme",
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
     "@decky/ui": "^4.11.0",
