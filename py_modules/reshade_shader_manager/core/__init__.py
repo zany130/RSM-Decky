@@ -1,0 +1,1 @@
+"""Core backend (no GTK)."""

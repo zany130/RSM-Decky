@@ -1,0 +1,152 @@
+import { call, toaster } from "@decky/api";
+import { ButtonItem, ConfirmModal, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { useState } from "react";
+
+import AddRepositoryModal from "../dialogs/AddRepositoryModal";
+import ManageShadersView from "../manage/ManageShadersView";
+import { toErrorDetails } from "../../utils/errorDetails";
+
+type CatalogRefreshResult = {
+  shader_repo_count: number;
+  addon_count: number;
+  force_refresh: boolean;
+};
+
+type UpdateClonesResult = {
+  existing_clone_count: number;
+  updated_count: number;
+  failures: string[];
+};
+
+type RepositoriesAddResult = {
+  added_repo_id: string;
+  user_repo_count: number;
+};
+
+type ShadersTabProps = {
+  gameDir: string;
+};
+
+function showError(message: string): void {
+  const handle = showModal(
+    <ConfirmModal
+      bAlertDialog
+      strTitle="RSM-Decky"
+      strDescription={<div style={{ whiteSpace: "pre-wrap" }}>{message}</div>}
+      onOK={() => handle.Close()}
+      strOKButtonText="OK"
+    />,
+    window as unknown as EventTarget
+  );
+}
+
+const ShadersTab = ({ gameDir }: ShadersTabProps) => {
+  const [busyAction, setBusyAction] = useState<null | "refresh" | "update" | "add">(null);
+  const [showManage, setShowManage] = useState(false);
+
+  const refreshCatalog = async () => {
+    setBusyAction("refresh");
+    try {
+      const res = await call<[boolean], CatalogRefreshResult>("catalog_refresh", true);
+      toaster.toast({
+        title: "RSM-Decky",
+        body: `Catalog refreshed (${res.shader_repo_count} shader repos, ${res.addon_count} add-ons).`,
+      });
+    } catch (e: unknown) {
+      showError(toErrorDetails(e));
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const updateClones = async () => {
+    setBusyAction("update");
+    try {
+      const res = await call<[], UpdateClonesResult>("catalog_update_clones");
+      if (res.failures.length) {
+        showError(
+          `Updated ${res.updated_count}/${res.existing_clone_count} existing clones.\n\nFailures:\n${res.failures.join(
+            "\n"
+          )}`
+        );
+      } else {
+        toaster.toast({
+          title: "RSM-Decky",
+          body: `Updated ${res.updated_count} local clone(s).`,
+        });
+      }
+    } catch (e: unknown) {
+      showError(toErrorDetails(e));
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const openAddRepository = () => {
+    let handle: { Close: () => void } | undefined;
+    handle = showModal(
+      <AddRepositoryModal
+        closeModal={() => handle?.Close()}
+        onSubmit={async (form) => {
+          setBusyAction("add");
+          try {
+            const res = await call<
+              [string, string, string, string, string],
+              RepositoriesAddResult
+            >(
+              "repositories_add",
+              form.repoId,
+              form.displayName,
+              form.gitUrl,
+              form.author,
+              form.description
+            );
+            toaster.toast({
+              title: "RSM-Decky",
+              body: `Added repository "${res.added_repo_id}".`,
+            });
+          } finally {
+            setBusyAction(null);
+          }
+        }}
+      />,
+      window as unknown as EventTarget,
+      { strTitle: "Add Repository" }
+    );
+  };
+
+  const disabled = busyAction !== null;
+
+  if (showManage) {
+    return <ManageShadersView gameDir={gameDir} onExit={() => setShowManage(false)} />;
+  }
+
+  return (
+    <div style={{ padding: "8px", overflowY: "auto", maxHeight: "100%" }}>
+      <PanelSection title="Shaders">
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={disabled} onClick={refreshCatalog}>
+            {busyAction === "refresh" ? "Refreshing..." : "Refresh Catalog"}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={disabled} onClick={updateClones}>
+            {busyAction === "update" ? "Updating..." : "Update Local Clones"}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={disabled} onClick={openAddRepository}>
+            {busyAction === "add" ? "Adding..." : "Add Repository"}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={disabled} onClick={() => setShowManage(true)}>
+            Manage Shaders
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+    </div>
+  );
+};
+
+export default ShadersTab;
