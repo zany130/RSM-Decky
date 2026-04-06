@@ -244,6 +244,14 @@ class RsmDeckyService:
         has_changes = desired_set != baseline_set
         pending_install = sorted(desired_set - baseline_set)
         pending_uninstall = sorted(baseline_set - desired_set)
+        log.info(
+            "addons_preflight game_dir=%s arch=%s catalog_count=%d installable_count=%d incompatible_count=%d",
+            gd,
+            arch,
+            len(addon_cat),
+            len(rows),
+            len(incompatible_names),
+        )
 
         return {
             "rows": rows,
