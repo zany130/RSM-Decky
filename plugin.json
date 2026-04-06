@@ -1,6 +1,7 @@
 {
   "name": "RSM-Decky",
   "author": "zany130",
+  "flags": [],
   "api_version": 1,
   "publish": {
     "tags": ["utility", "reshade", "shaders", "addons"],
