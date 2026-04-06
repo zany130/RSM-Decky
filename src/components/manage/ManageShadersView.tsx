@@ -198,17 +198,8 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        maxHeight: "100%",
-        minHeight: 0,
-      }}
-    >
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "8px" }}>
-        <PanelSection title="Manage Shaders">
+    <div style={{ padding: "8px", overflowY: "auto", maxHeight: "100%" }}>
+      <PanelSection title="Manage Shaders">
           <PanelSectionRow>
             <TextField
               label="Search"
@@ -230,9 +221,9 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
               </PanelSectionRow>
             </>
           )}
-        </PanelSection>
+      </PanelSection>
 
-        <PanelSection title={`Installed (${installedRows.length})`}>
+      <PanelSection title={`Installed (${installedRows.length})`}>
           {installedRows.map((r) => (
             <PanelSectionRow key={r.id}>
               <ToggleField
@@ -249,9 +240,9 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
               <div style={{ opacity: 0.8, fontSize: "12px" }}>No installed shader repositories.</div>
             </PanelSectionRow>
           )}
-        </PanelSection>
+      </PanelSection>
 
-        <PanelSection title={`Available (${availableRows.length})`}>
+      <PanelSection title={`Available (${availableRows.length})`}>
           {availableRows.map((r) => (
             <PanelSectionRow key={r.id}>
               <ToggleField
@@ -268,23 +259,20 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
               <div style={{ opacity: 0.8, fontSize: "12px" }}>No available shader repositories.</div>
             </PanelSectionRow>
           )}
-        </PanelSection>
-      </div>
+      </PanelSection>
 
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", padding: "8px" }}>
-        <PanelSection title="Actions">
-          <PanelSectionRow>
-            <ButtonItem layout="below" disabled={!pendingChanges || applying || loading || !!loadError} onClick={apply}>
-              {applying ? "Applying..." : "Apply"}
-            </ButtonItem>
-          </PanelSectionRow>
-          <PanelSectionRow>
-            <ButtonItem layout="below" disabled={applying} onClick={handleBack}>
-              Cancel / Back
-            </ButtonItem>
-          </PanelSectionRow>
-        </PanelSection>
-      </div>
+      <PanelSection title="Actions">
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={!pendingChanges || applying || loading || !!loadError} onClick={apply}>
+            {applying ? "Applying..." : "Apply"}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={applying} onClick={handleBack}>
+            Cancel / Back
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
     </div>
   );
 };
