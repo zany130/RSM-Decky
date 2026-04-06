@@ -8,7 +8,7 @@ import {
   showModal,
 } from "@decky/ui";
 import { call, toaster } from "@decky/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GRAPHICS_API_OPTIONS, VARIANT_OPTIONS } from "../../constants/reshade";
 import { toErrorDetails } from "../../utils/errorDetails";
@@ -54,6 +54,7 @@ function showError(message: string): void {
 }
 
 const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
+  const mountedRef = useRef(true);
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [resolveArchError, setResolveArchError] = useState<string | null>(null);
@@ -84,18 +85,30 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
         call<[string], ResolveManifestResult>("game_resolve_manifest", gameDir),
         call<[string], ReshadeStatus>("reshade_get_status", gameDir),
       ]);
+      if (!mountedRef.current) {
+        return;
+      }
       setResolveArchError(resolved.arch_error ?? null);
       applyManifestToForm(resolved.manifest);
       setStatus(st);
     } catch (e: unknown) {
+      if (!mountedRef.current) {
+        return;
+      }
       showError(toErrorDetails(e));
     } finally {
-      setBusy(false);
+      if (mountedRef.current) {
+        setBusy(false);
+      }
     }
   }, [applyManifestToForm, gameDir]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void loadData();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [loadData]);
 
   const runAction = async (toastBody: string, fn: () => Promise<unknown>) => {

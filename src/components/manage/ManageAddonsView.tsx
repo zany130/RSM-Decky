@@ -77,6 +77,7 @@ function confirmDiscard(): Promise<boolean> {
 const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<AddonRow[]>([]);
   const [baseline, setBaseline] = useState<Set<string>>(new Set());
@@ -103,6 +104,18 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
     } else {
       setDesired(new Set(res.baseline_ids));
     }
+    setLoadError(null);
+  };
+
+  const retryLoad = async () => {
+    setLoading(true);
+    try {
+      await loadPreflight();
+    } catch (e: unknown) {
+      setLoadError(toErrorDetails(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -113,8 +126,7 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
         await loadPreflight();
       } catch (e: unknown) {
         if (!cancelled) {
-          showError(toErrorDetails(e));
-          onExit();
+          setLoadError(toErrorDetails(e));
         }
       } finally {
         if (!cancelled) {
@@ -182,7 +194,7 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
   };
 
   const apply = async () => {
-    if (!pendingChanges || applying) {
+    if (!pendingChanges || applying || loadError) {
       return;
     }
     setApplying(true);
@@ -219,6 +231,18 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
             </div>
           </PanelSectionRow>
         )}
+        {loadError && (
+          <>
+            <PanelSectionRow>
+              <div style={{ color: "salmon", fontSize: "12px", whiteSpace: "pre-wrap" }}>{loadError}</div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" disabled={loading || applying} onClick={() => void retryLoad()}>
+                {loading ? "Retrying..." : "Retry"}
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
         {incompatibleCount > 0 && (
           <PanelSectionRow>
             <div style={{ opacity: 0.8, fontSize: "12px" }}>
@@ -236,7 +260,7 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
           <PanelSectionRow key={r.id}>
             <ToggleField
               checked={desired.has(r.id)}
-              disabled={loading || applying}
+              disabled={loading || applying || !!loadError}
               onChange={(checked) => toggleRow(r.id, checked)}
               label={r.name}
               description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
@@ -255,7 +279,7 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
           <PanelSectionRow key={r.id}>
             <ToggleField
               checked={desired.has(r.id)}
-              disabled={loading || applying}
+              disabled={loading || applying || !!loadError}
               onChange={(checked) => toggleRow(r.id, checked)}
               label={r.name}
               description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
@@ -271,7 +295,11 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
 
       <PanelSection title="Actions">
         <PanelSectionRow>
-          <ButtonItem layout="below" disabled={!pendingChanges || applying || loading} onClick={apply}>
+          <ButtonItem
+            layout="below"
+            disabled={!pendingChanges || applying || loading || !!loadError}
+            onClick={apply}
+          >
             {applying ? "Applying..." : "Apply"}
           </ButtonItem>
         </PanelSectionRow>

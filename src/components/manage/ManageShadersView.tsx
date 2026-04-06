@@ -70,6 +70,7 @@ function confirmDiscard(): Promise<boolean> {
 const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ShaderRow[]>([]);
   const [baseline, setBaseline] = useState<Set<string>>(new Set());
@@ -88,6 +89,18 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
     } else {
       setDesired(new Set(res.baseline_repo_ids));
     }
+    setLoadError(null);
+  };
+
+  const retryLoad = async () => {
+    setLoading(true);
+    try {
+      await loadPreflight();
+    } catch (e: unknown) {
+      setLoadError(toErrorDetails(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -98,8 +111,7 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
         await loadPreflight();
       } catch (e: unknown) {
         if (!cancelled) {
-          showError(toErrorDetails(e));
-          onExit();
+          setLoadError(toErrorDetails(e));
         }
       } finally {
         if (!cancelled) {
@@ -167,7 +179,7 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
   };
 
   const apply = async () => {
-    if (!pendingChanges || applying) {
+    if (!pendingChanges || applying || loadError) {
       return;
     }
     setApplying(true);
@@ -197,6 +209,18 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
             onChange={(ev) => setSearch(ev.target.value)}
           />
         </PanelSectionRow>
+        {loadError && (
+          <>
+            <PanelSectionRow>
+              <div style={{ color: "salmon", fontSize: "12px", whiteSpace: "pre-wrap" }}>{loadError}</div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" disabled={loading || applying} onClick={() => void retryLoad()}>
+                {loading ? "Retrying..." : "Retry"}
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
       </PanelSection>
 
       <PanelSection title={`Installed (${installedRows.length})`}>
@@ -204,7 +228,7 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
           <PanelSectionRow key={r.id}>
             <ToggleField
               checked={desired.has(r.id)}
-              disabled={loading || applying}
+              disabled={loading || applying || !!loadError}
               onChange={(checked) => toggleRow(r.id, checked)}
               label={r.name}
               description={`${r.author || "Unknown author"}${r.description ? ` • ${r.description}` : ""}`}
@@ -223,7 +247,7 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
           <PanelSectionRow key={r.id}>
             <ToggleField
               checked={desired.has(r.id)}
-              disabled={loading || applying}
+              disabled={loading || applying || !!loadError}
               onChange={(checked) => toggleRow(r.id, checked)}
               label={r.name}
               description={`${r.author || "Unknown author"}${r.description ? ` • ${r.description}` : ""}`}
@@ -239,7 +263,7 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
 
       <PanelSection title="Actions">
         <PanelSectionRow>
-          <ButtonItem layout="below" disabled={!pendingChanges || applying || loading} onClick={apply}>
+          <ButtonItem layout="below" disabled={!pendingChanges || applying || loading || !!loadError} onClick={apply}>
             {applying ? "Applying..." : "Apply"}
           </ButtonItem>
         </PanelSectionRow>
