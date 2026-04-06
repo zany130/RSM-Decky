@@ -308,8 +308,9 @@ def install_reshade(
     resolved = resolve_reshade_version(reshade_version, paths)
     addon = variant == "addon"
     exe = download_reshade_installer(resolved, paths, addon=addon)
-    extdir = paths.reshade_extract_dir(resolved)
-    if not _extract_has_payload(extdir):
+    extdir = paths.reshade_extract_dir(resolved, addon=addon)
+    has_payload_before_extract = _extract_has_payload(extdir)
+    if not has_payload_before_extract:
         extract_reshade_installer(exe, extdir)
     reshade_src = find_payload_dlls(extdir, manifest.reshade_arch)
     dest_name = proxy_dll_for_api(api)

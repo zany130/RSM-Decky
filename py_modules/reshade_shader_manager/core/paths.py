@@ -75,8 +75,9 @@ class RsmPaths:
         name = f"ReShade_Setup_{version}{suffix}.exe"
         return self.data_dir / "reshade" / "downloads" / name
 
-    def reshade_extract_dir(self, version: str) -> Path:
-        return self.data_dir / "reshade" / "extracted" / version
+    def reshade_extract_dir(self, version: str, *, addon: bool) -> Path:
+        suffix = "_addon" if addon else "_standard"
+        return self.data_dir / "reshade" / "extracted" / f"{version}{suffix}"
 
     def cached_d3dcompiler_path(self) -> Path:
         """Cached ``d3dcompiler_47.dll`` downloaded from the Lutris tools mirror (not from ReShade)."""
