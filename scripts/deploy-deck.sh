@@ -25,9 +25,9 @@ if ! ssh "${SSH_OPTS[@]}" "${REMOTE}" "printf 'ok\n'" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "==> Building frontend"
+echo "==> Building release runtime layout"
 cd "${LOCAL_ROOT}"
-pnpm build
+bash scripts/build-release.sh
 
 echo "==> Preparing remote staging path"
 ssh "${SSH_OPTS[@]}" "${REMOTE}" "
@@ -51,11 +51,7 @@ REMOTE_REAL_DIR="${REMOTE_HOME}/${DECKY_PLUGINS_DIR_REL}/${PLUGIN_NAME}"
 
 echo "==> Syncing files to staging dir"
 rsync -az --delete \
-  --exclude '.git/' \
-  --exclude 'node_modules/' \
-  --exclude '.cursor/' \
-  --exclude 'docs/' \
-  "${LOCAL_ROOT}/" "${REMOTE}:${REMOTE_STAGING_DIR}/"
+  "${LOCAL_ROOT}/release/${PLUGIN_NAME}/" "${REMOTE}:${REMOTE_STAGING_DIR}/"
 
 echo "==> Installing into Decky plugin dir and restarting loader"
 ssh -t "${SSH_OPTS[@]}" "${REMOTE}" "
