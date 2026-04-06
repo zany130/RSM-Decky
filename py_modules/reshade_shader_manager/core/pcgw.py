@@ -240,14 +240,18 @@ def get_pcgw_repos(paths: RsmPaths, *, ttl_hours: float, force_refresh: bool = F
         if data and isinstance(data.get("repos"), list):
             return [r for r in data["repos"] if isinstance(r, dict)]
 
-    repos, err = fetch_pcgw_repos_raw()
-    if repos or err is not None:
-        save_pcgw_cache(cache_path, repos, err)
-    if repos:
-        return repos
     stale = load_pcgw_cache(cache_path)
+    repos, err = fetch_pcgw_repos_raw()
+    if repos:
+        save_pcgw_cache(cache_path, repos, err)
+        return repos
+    if err is None:
+        # Successful fetch with no matches: persist empty result as fresh.
+        save_pcgw_cache(cache_path, [], None)
+        return []
     if stale and isinstance(stale.get("repos"), list):
         log.warning("PCGW fetch failed (%s); using stale cache", err or "unknown error")
         return [r for r in stale["repos"] if isinstance(r, dict)]
+    save_pcgw_cache(cache_path, [], err)
     log.warning("PCGW fetch failed (%s) and no cache", err or "unknown error")
     return []

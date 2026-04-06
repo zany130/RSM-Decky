@@ -136,13 +136,14 @@ def get_upstream_plugin_addons(
         if data:
             return _addons_from_cache_payload(data)
 
+    stale = load_plugin_addons_cache(cache_path)
+    stale_payload = _addons_from_cache_payload(stale) if stale else []
+
     text, err = fetch_addons_ini_raw()
     if text is None:
-        stale = load_plugin_addons_cache(cache_path)
-        payload = _addons_from_cache_payload(stale) if stale else []
-        if payload:
+        if stale_payload:
             log.warning("Plugin add-on catalog fetch failed (%s); using stale cache", err or "unknown error")
-            return payload
+            return stale_payload
         if err:
             log.warning("Plugin add-on catalog fetch failed (%s) and no cache", err)
         else:
@@ -158,5 +159,8 @@ def get_upstream_plugin_addons(
         pe = f"parse error: {e}"
         combined_err = f"{combined_err}; {pe}" if combined_err else pe
         log.warning("Addons.ini parse failed: %s", e)
+    if combined_err and not addons and stale_payload:
+        log.warning("Using stale plugin add-on cache after refresh failure (%s)", combined_err)
+        return stale_payload
     save_plugin_addons_cache(cache_path, addons, combined_err)
     return addons
