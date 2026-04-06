@@ -213,102 +213,114 @@ const ManageAddonsView = ({ gameDir, onExit }: ManageAddonsViewProps) => {
   };
 
   return (
-    <div style={{ padding: "8px", overflowY: "auto", maxHeight: "100%" }}>
-      <PanelSection title="Manage Add-ons">
-        <PanelSectionRow>
-          <TextField
-            label="Search"
-            description="Filter by name, author, or description."
-            value={search}
-            disabled={loading || applying}
-            onChange={(ev) => setSearch(ev.target.value)}
-          />
-        </PanelSectionRow>
-        {gameArch && (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        maxHeight: "100%",
+        minHeight: 0,
+      }}
+    >
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "8px" }}>
+        <PanelSection title="Manage Add-ons">
           <PanelSectionRow>
-            <div style={{ opacity: 0.8, fontSize: "12px" }}>
-              Showing add-ons compatible with game architecture: {gameArch === "64" ? "x64" : "x86"}
-            </div>
-          </PanelSectionRow>
-        )}
-        {loadError && (
-          <>
-            <PanelSectionRow>
-              <div style={{ color: "salmon", fontSize: "12px", whiteSpace: "pre-wrap" }}>{loadError}</div>
-            </PanelSectionRow>
-            <PanelSectionRow>
-              <ButtonItem layout="below" disabled={loading || applying} onClick={() => void retryLoad()}>
-                {loading ? "Retrying..." : "Retry"}
-              </ButtonItem>
-            </PanelSectionRow>
-          </>
-        )}
-        {incompatibleCount > 0 && (
-          <PanelSectionRow>
-            <div style={{ opacity: 0.8, fontSize: "12px" }}>
-              {incompatibleCount} add-on{incompatibleCount === 1 ? "" : "s"} hidden due to architecture
-              mismatch.
-              {incompatibleReason ? ` ${incompatibleReason}` : ""}
-              {incompatibleNames.length ? ` Examples: ${incompatibleNames.join(", ")}.` : ""}
-            </div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
-
-      <PanelSection title={`Installed (${installedRows.length})`}>
-        {installedRows.map((r) => (
-          <PanelSectionRow key={r.id}>
-            <ToggleField
-              checked={desired.has(r.id)}
-              disabled={loading || applying || !!loadError}
-              onChange={(checked) => toggleRow(r.id, checked)}
-              label={r.name}
-              description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
+            <TextField
+              label="Search"
+              description="Filter by name, author, or description."
+              value={search}
+              disabled={loading || applying}
+              onChange={(ev) => setSearch(ev.target.value)}
             />
           </PanelSectionRow>
-        ))}
-        {installedRows.length === 0 && (
-          <PanelSectionRow>
-            <div style={{ opacity: 0.8, fontSize: "12px" }}>No installed add-ons.</div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
+          {gameArch && (
+            <PanelSectionRow>
+              <div style={{ opacity: 0.8, fontSize: "12px" }}>
+                Showing add-ons compatible with game architecture: {gameArch === "64" ? "x64" : "x86"}
+              </div>
+            </PanelSectionRow>
+          )}
+          {loadError && (
+            <>
+              <PanelSectionRow>
+                <div style={{ color: "salmon", fontSize: "12px", whiteSpace: "pre-wrap" }}>{loadError}</div>
+              </PanelSectionRow>
+              <PanelSectionRow>
+                <ButtonItem layout="below" disabled={loading || applying} onClick={() => void retryLoad()}>
+                  {loading ? "Retrying..." : "Retry"}
+                </ButtonItem>
+              </PanelSectionRow>
+            </>
+          )}
+          {incompatibleCount > 0 && (
+            <PanelSectionRow>
+              <div style={{ opacity: 0.8, fontSize: "12px" }}>
+                {incompatibleCount} add-on{incompatibleCount === 1 ? "" : "s"} hidden due to architecture
+                mismatch.
+                {incompatibleReason ? ` ${incompatibleReason}` : ""}
+                {incompatibleNames.length ? ` Examples: ${incompatibleNames.join(", ")}.` : ""}
+              </div>
+            </PanelSectionRow>
+          )}
+        </PanelSection>
 
-      <PanelSection title={`Available (${availableRows.length})`}>
-        {availableRows.map((r) => (
-          <PanelSectionRow key={r.id}>
-            <ToggleField
-              checked={desired.has(r.id)}
-              disabled={loading || applying || !!loadError}
-              onChange={(checked) => toggleRow(r.id, checked)}
-              label={r.name}
-              description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
-            />
-          </PanelSectionRow>
-        ))}
-        {availableRows.length === 0 && (
-          <PanelSectionRow>
-            <div style={{ opacity: 0.8, fontSize: "12px" }}>No available add-ons.</div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
+        <PanelSection title={`Installed (${installedRows.length})`}>
+          {installedRows.map((r) => (
+            <PanelSectionRow key={r.id}>
+              <ToggleField
+                checked={desired.has(r.id)}
+                disabled={loading || applying || !!loadError}
+                onChange={(checked) => toggleRow(r.id, checked)}
+                label={r.name}
+                description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
+              />
+            </PanelSectionRow>
+          ))}
+          {installedRows.length === 0 && (
+            <PanelSectionRow>
+              <div style={{ opacity: 0.8, fontSize: "12px" }}>No installed add-ons.</div>
+            </PanelSectionRow>
+          )}
+        </PanelSection>
 
-      <PanelSection title="Actions">
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            disabled={!pendingChanges || applying || loading || !!loadError}
-            onClick={apply}
-          >
-            {applying ? "Applying..." : "Apply"}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem layout="below" disabled={applying} onClick={handleBack}>
-            Cancel / Back
-          </ButtonItem>
-        </PanelSectionRow>
-      </PanelSection>
+        <PanelSection title={`Available (${availableRows.length})`}>
+          {availableRows.map((r) => (
+            <PanelSectionRow key={r.id}>
+              <ToggleField
+                checked={desired.has(r.id)}
+                disabled={loading || applying || !!loadError}
+                onChange={(checked) => toggleRow(r.id, checked)}
+                label={r.name}
+                description={`${r.download_arch}${r.description ? ` • ${r.description}` : ""}`}
+              />
+            </PanelSectionRow>
+          ))}
+          {availableRows.length === 0 && (
+            <PanelSectionRow>
+              <div style={{ opacity: 0.8, fontSize: "12px" }}>No available add-ons.</div>
+            </PanelSectionRow>
+          )}
+        </PanelSection>
+      </div>
+
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", padding: "8px" }}>
+        <PanelSection title="Actions">
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              disabled={!pendingChanges || applying || loading || !!loadError}
+              onClick={apply}
+            >
+              {applying ? "Applying..." : "Apply"}
+            </ButtonItem>
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <ButtonItem layout="below" disabled={applying} onClick={handleBack}>
+              Cancel / Back
+            </ButtonItem>
+          </PanelSectionRow>
+        </PanelSection>
+      </div>
     </div>
   );
 };
