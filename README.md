@@ -3,6 +3,10 @@
 RSM-Decky is a Decky Loader plugin for per-game ReShade management on Steam Deck.
 It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
+## Related Project
+
+- GTK app + CLI backend project: [reshade-shader-manager](https://github.com/zany130/reshadeshadermanager)
+
 ## Current Feature Set (v0.1.x)
 
 - Per-game launch entry in the Steam library context menu
