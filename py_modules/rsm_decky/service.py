@@ -28,18 +28,16 @@ def _paths_cfg() -> tuple[RsmPaths, AppConfig]:
 
 
 def _refresh_arch(m: GameManifest, gd: Path) -> str | None:
-    exe_path = Path(m.game_exe).expanduser() if m.game_exe else None
-    if exe_path and not exe_path.is_file():
-        exe_path = None
     try:
-        m.reshade_arch = detect_game_arch(gd, exe_path)
+        # Decky is game_dir-driven (Steam app install folder). Ignore legacy game_exe targeting.
+        m.reshade_arch = detect_game_arch(gd, None)
         return None
     except ValueError:
         if m.reshade_arch in ("32", "64"):
             return None
         return (
-            "Could not detect 32/64-bit architecture. Add a Windows .exe to the game directory, "
-            "or use a game whose install folder contains an .exe."
+            "Could not detect 32/64-bit architecture from the game directory. "
+            "Use a game whose install folder contains a Windows .exe."
         )
 
 
@@ -174,15 +172,11 @@ class RsmDeckyService:
             )
             raise RSMError(f"Unknown repository id(s): {', '.join(unknown_ids)}")
 
-        clone_targets = [
-            {"id": rid, "git_url": str(by_id[rid].get("git_url", "")), "repo_dir": str(paths.repo_clone_dir(rid))}
-            for rid in desired_ids
-        ]
         log.info(
-            "shaders_apply start game_dir=%s desired_count=%d clone_targets=%s",
+            "shaders_apply start game_dir=%s desired_count=%d desired_ids=%s",
             gd,
             len(desired_ids),
-            clone_targets,
+            desired_ids,
         )
         apply_shader_projection(
             paths=paths,

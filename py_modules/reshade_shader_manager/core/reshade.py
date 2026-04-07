@@ -265,15 +265,13 @@ def _ensure_d3dcompiler_47(game_dir: Path, paths: RsmPaths) -> bool:
     return True
 
 
-def _reshade_ini_path_for_manifest(manifest: GameManifest, game_dir: Path) -> Path:
-    if manifest.game_exe:
-        exe = Path(manifest.game_exe).expanduser()
-        return exe.parent / "ReShade.ini"
+def _reshade_ini_path_for_game_dir(game_dir: Path) -> Path:
+    # Decky targets Steam install folders directly; keep ReShade.ini anchored to game_dir.
     return game_dir / "ReShade.ini"
 
 
-def _ensure_minimal_reshade_ini_if_missing(manifest: GameManifest, game_dir: Path) -> None:
-    ini_path = _reshade_ini_path_for_manifest(manifest, game_dir)
+def _ensure_minimal_reshade_ini_if_missing(game_dir: Path) -> None:
+    ini_path = _reshade_ini_path_for_game_dir(game_dir)
     if ini_path.exists():
         return
     ini_path.parent.mkdir(parents=True, exist_ok=True)
@@ -353,7 +351,7 @@ def install_reshade(
     installed.append(dest_name)
     if _ensure_d3dcompiler_47(game_dir, paths):
         installed.append(_D3D_COMPILER_BASENAME)
-    _ensure_minimal_reshade_ini_if_missing(manifest, game_dir)
+    _ensure_minimal_reshade_ini_if_missing(game_dir)
 
     manifest.reshade_version = resolved
     manifest.reshade_variant = "addon" if addon else "standard"

@@ -37,6 +37,8 @@ VALID_ARCH = frozenset({"32", "64"})
 class GameManifest:
     schema_version: int = SCHEMA_VERSION
     game_dir: str = ""
+    # Legacy field kept for compatibility with shared core schema and old manifests.
+    # Decky runtime uses game_dir as the canonical target and does not rely on game_exe.
     game_exe: str | None = None
     graphics_api: str = "dx11"
     reshade_version: str = ""

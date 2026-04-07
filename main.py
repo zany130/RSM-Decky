@@ -54,7 +54,7 @@ class Plugin:
         return {"valid": True}
 
     async def steam_resolve_game_dir(self, app_id: int) -> dict:
-        """Stub only — real VDF resolution comes later."""
+        """Legacy fallback stub kept for API compatibility; v0.2+ uses frontend-resolved game_dir."""
         await asyncio.sleep(0)
         decky.logger.info("steam_resolve_game_dir stub (app_id=%s)", app_id)
         return {"game_dir": "NOT_IMPLEMENTED"}
