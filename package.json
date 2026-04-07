@@ -1,6 +1,6 @@
 {
   "name": "rsm-decky",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Decky plugin for per-game ReShade, shader repository, and add-on management.",
   "type": "module",
   "scripts": {
