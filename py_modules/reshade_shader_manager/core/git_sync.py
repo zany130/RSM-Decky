@@ -53,19 +53,15 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
     repo_dir = repo_dir.resolve()
     with _git_lock:
         git_env, removed_env = _sanitized_git_env()
-        log.info(
-            "git subprocess env sanitized repo_dir=%s removed=%s ld_library_path=%r",
-            repo_dir,
-            removed_env,
-            git_env.get("LD_LIBRARY_PATH"),
-        )
+        if removed_env:
+            log.debug("git subprocess env sanitized repo_dir=%s removed=%s", repo_dir, removed_env)
         git_dir = repo_dir / ".git"
         if git_dir.exists():
             if pull:
                 started = time.monotonic()
                 log.info("git pull start repo_dir=%s git_url=%s timeout=%ss", repo_dir, git_url, timeout)
                 try:
-                    cp = subprocess.run(
+                    subprocess.run(
                         ["git", "-C", str(repo_dir), "pull", "--rebase=false"],
                         check=True,
                         timeout=timeout,
@@ -75,11 +71,9 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                     )
                     elapsed = time.monotonic() - started
                     log.info(
-                        "git pull success repo_dir=%s elapsed=%.2fs stdout=%r stderr=%r",
+                        "git pull success repo_dir=%s elapsed=%.2fs",
                         repo_dir,
                         elapsed,
-                        (cp.stdout or "").strip()[:1200],
-                        (cp.stderr or "").strip()[:1200],
                     )
                 except subprocess.TimeoutExpired as e:
                     elapsed = time.monotonic() - started
@@ -110,7 +104,7 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
             started = time.monotonic()
             log.info("git clone start git_url=%s repo_dir=%s timeout=%ss", git_url, repo_dir, timeout)
             try:
-                cp = subprocess.run(
+                subprocess.run(
                     ["git", "clone", git_url, str(repo_dir)],
                     check=True,
                     timeout=timeout,
@@ -120,12 +114,10 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                 )
                 elapsed = time.monotonic() - started
                 log.info(
-                    "git clone success git_url=%s repo_dir=%s elapsed=%.2fs stdout=%r stderr=%r",
+                    "git clone success git_url=%s repo_dir=%s elapsed=%.2fs",
                     git_url,
                     repo_dir,
                     elapsed,
-                    (cp.stdout or "").strip()[:1200],
-                    (cp.stderr or "").strip()[:1200],
                 )
             except subprocess.TimeoutExpired as e:
                 elapsed = time.monotonic() - started
