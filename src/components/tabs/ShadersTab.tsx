@@ -72,6 +72,12 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
             "\n"
           )}`
         );
+      } else if (res.updated_count === 0) {
+        showError(
+          res.existing_clone_count === 0
+            ? "No local repository clones were found to update. Use Manage Shaders to enable repos so clones can be created first."
+            : "No local clones reported new commits to pull (they may already be up to date). This is not the same as a full catalog refresh."
+        );
       } else {
         toaster.toast({
           title: "RSM-Decky",
