@@ -11,6 +11,7 @@ import { call, toaster } from "@decky/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GRAPHICS_API_OPTIONS, VARIANT_OPTIONS } from "../../constants/reshade";
+import { debugLog } from "../../utils/debugLog";
 import { toErrorDetails } from "../../utils/errorDetails";
 
 type GameManifestJson = {
@@ -51,6 +52,32 @@ function showError(message: string): void {
     />,
     window as unknown as EventTarget
   );
+}
+
+// TEMP DEBUG: kept for troubleshooting, gated by RSM_DEBUG_CEF.
+function logInstallUpdateErrorDebug(e: unknown, action: "install" | "update"): void {
+  const err = e as {
+    name?: unknown;
+    message?: unknown;
+    stack?: unknown;
+    cause?: unknown;
+    detail?: unknown;
+    data?: unknown;
+    response?: unknown;
+    body?: unknown;
+  };
+  const ownProps =
+    typeof e === "object" && e !== null ? Object.getOwnPropertyNames(e) : [];
+  debugLog(`install/update catch (${action}) raw error object`, e);
+  debugLog("error.name", err?.name);
+  debugLog("error.message", err?.message);
+  debugLog("error.stack", err?.stack);
+  debugLog("error.cause", err?.cause);
+  debugLog("error.detail", err?.detail);
+  debugLog("error.data", err?.data);
+  debugLog("error.response", err?.response);
+  debugLog("error.body", err?.body);
+  debugLog("Object.getOwnPropertyNames(error)", ownProps);
 }
 
 const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
@@ -111,13 +138,20 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
     };
   }, [loadData]);
 
-  const runAction = async (toastBody: string, fn: () => Promise<unknown>) => {
+  const runAction = async (
+    toastBody: string,
+    fn: () => Promise<unknown>,
+    debugAction?: "install" | "update"
+  ) => {
     setActionBusy(true);
     try {
       await fn();
       toaster.toast({ title: "RSM-Decky", body: toastBody });
       await loadData();
     } catch (e: unknown) {
+      if (debugAction) {
+        logInstallUpdateErrorDebug(e, debugAction);
+      }
       showError(toErrorDetails(e));
     } finally {
       setActionBusy(false);
@@ -236,14 +270,17 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
             layout="below"
             disabled={installDisabled}
             onClick={() =>
-              runAction("ReShade installed.", () =>
-                call<[string, string, string, string], { message?: string }>(
-                  "reshade_install",
-                  gameDir,
-                  graphicsApi,
-                  variant,
-                  version.trim() || "latest"
-                )
+              runAction(
+                "ReShade installed.",
+                () =>
+                  call<[string, string, string, string], { message?: string }>(
+                    "reshade_install",
+                    gameDir,
+                    graphicsApi,
+                    variant,
+                    version.trim() || "latest"
+                  ),
+                "install"
               )
             }
           >
@@ -257,13 +294,16 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
               busy || actionBusy || !!(resolveArchError || status?.arch_error) || !apiForUpdate || !status?.has_manifest
             }
             onClick={() =>
-              runAction("ReShade updated / reinstalled.", () =>
-                call<[string, string, string], { message?: string }>(
-                  "reshade_update_reinstall",
-                  gameDir,
-                  apiForUpdate,
-                  variantForUpdate
-                )
+              runAction(
+                "ReShade updated / reinstalled.",
+                () =>
+                  call<[string, string, string], { message?: string }>(
+                    "reshade_update_reinstall",
+                    gameDir,
+                    apiForUpdate,
+                    variantForUpdate
+                  ),
+                "update"
               )
             }
           >

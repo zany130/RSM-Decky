@@ -1,3 +1,5 @@
+import { debugLog } from "./debugLog";
+
 const FINAL_FALLBACK =
   "Plugin operation failed, but no detailed error message was returned.";
 
@@ -30,22 +32,40 @@ function firstMeaningfulStackLine(stack: string | undefined): string | null {
   if (!stack) {
     return null;
   }
+  let jsFrameFallback: string | null = null;
   for (const raw of stack.split("\n")) {
     const line = raw.trim();
     if (!line) {
       continue;
     }
+    if (
+      line === "Traceback (most recent call last):" ||
+      /^File ".*", line \d+, in .+$/.test(line)
+    ) {
+      continue;
+    }
+    const pyException = /^([A-Za-z_][\w.]*)\s*:\s*(.+)$/.exec(line);
+    if (pyException) {
+      const exName = pyException[1].trim();
+      const exMsg = pyException[2].trim();
+      if (!isUselessErrorText(exName, `${exName}: ${exMsg}`)) {
+        return `${exName}: ${exMsg}`;
+      }
+    }
     if (isUselessErrorText("Error", line)) {
       continue;
     }
     if (/^at\s/i.test(line)) {
-      return line;
+      if (!jsFrameFallback) {
+        jsFrameFallback = line;
+      }
+      continue;
     }
     if (!isUselessErrorText("Python Exception", line)) {
       return line;
     }
   }
-  return null;
+  return jsFrameFallback;
 }
 
 type ErrorExtras = Error & {
@@ -68,6 +88,7 @@ function appendExtraField(segments: string[], label: string, value: unknown): vo
 }
 
 export function toErrorDetails(e: unknown): string {
+  debugLog("toErrorDetails raw input", e);
   if (e instanceof Error) {
     const name = e.name || "Error";
     const trimmed = (e.message || "").trim();
@@ -75,15 +96,20 @@ export function toErrorDetails(e: unknown): string {
 
     const hasGoodPrimary = Boolean(trimmed) && !isUselessErrorText(name, trimmed);
     const segments: string[] = [];
+    let fallbackBranch = "primary_message";
 
     if (hasGoodPrimary) {
       segments.push(`${name}: ${trimmed}`);
     } else {
       appendExtraField(segments, "cause", ext.cause);
+      if (segments.length > 0) {
+        fallbackBranch = "fallback_cause";
+      }
       if (segments.length === 0) {
         for (const key of ["detail", "data", "response", "body"] as const) {
           appendExtraField(segments, key, ext[key]);
           if (segments.length > 0) {
+            fallbackBranch = `fallback_${key}`;
             break;
           }
         }
@@ -92,10 +118,12 @@ export function toErrorDetails(e: unknown): string {
         const sl = firstMeaningfulStackLine(e.stack);
         if (sl) {
           segments.push(sl);
+          fallbackBranch = "fallback_stack_line";
         }
       }
       if (segments.length === 0) {
         segments.push(FINAL_FALLBACK);
+        fallbackBranch = "fallback_final_default";
       }
     }
 
@@ -103,15 +131,24 @@ export function toErrorDetails(e: unknown): string {
       appendExtraField(segments, "cause", ext.cause);
     }
 
-    return segments.join("\n");
+    const formatted = segments.join("\n");
+    debugLog("toErrorDetails fallback branch", fallbackBranch);
+    debugLog("toErrorDetails final formatted output", formatted);
+    return formatted;
   }
   try {
     const json = JSON.stringify(e);
     if (json && json !== "{}") {
-      return `Non-Error rejection: ${json}`;
+      const formatted = `Non-Error rejection: ${json}`;
+      debugLog("toErrorDetails fallback branch", "non_error_json");
+      debugLog("toErrorDetails final formatted output", formatted);
+      return formatted;
     }
   } catch {
     // ignore and fall through
   }
-  return `Non-Error rejection: ${String(e)}`;
+  const formatted = `Non-Error rejection: ${String(e)}`;
+  debugLog("toErrorDetails fallback branch", "non_error_string");
+  debugLog("toErrorDetails final formatted output", formatted);
+  return formatted;
 }
