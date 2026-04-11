@@ -4,13 +4,12 @@ import { useState } from "react";
 
 import AddRepositoryModal from "../dialogs/AddRepositoryModal";
 import ManageShadersView from "../manage/ManageShadersView";
+import {
+  catalogRefreshDegradedModalBody,
+  catalogRefreshSuccessToastBody,
+  type CatalogRefreshResult,
+} from "../../utils/catalogRefreshToast";
 import { toErrorDetails } from "../../utils/errorDetails";
-
-type CatalogRefreshResult = {
-  shader_repo_count: number;
-  addon_count: number;
-  force_refresh: boolean;
-};
 
 type UpdateClonesResult = {
   existing_clone_count: number;
@@ -48,10 +47,14 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
     setBusyAction("refresh");
     try {
       const res = await call<[boolean], CatalogRefreshResult>("catalog_refresh", true);
-      toaster.toast({
-        title: "RSM-Decky",
-        body: `Catalog refreshed (${res.shader_repo_count} shader repos, ${res.addon_count} add-ons).`,
-      });
+      if (res.force_refresh && res.ok && !res.warning) {
+        toaster.toast({
+          title: "RSM-Decky",
+          body: catalogRefreshSuccessToastBody(res),
+        });
+      } else {
+        showError(catalogRefreshDegradedModalBody(res));
+      }
     } catch (e: unknown) {
       showError(toErrorDetails(e));
     } finally {

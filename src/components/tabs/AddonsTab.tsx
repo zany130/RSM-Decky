@@ -1,14 +1,13 @@
 import { call, toaster } from "@decky/api";
 import { ButtonItem, ConfirmModal, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
 import { useState } from "react";
-import { toErrorDetails } from "../../utils/errorDetails";
 import ManageAddonsView from "../manage/ManageAddonsView";
-
-type CatalogRefreshResult = {
-  shader_repo_count: number;
-  addon_count: number;
-  force_refresh: boolean;
-};
+import {
+  catalogRefreshDegradedModalBody,
+  catalogRefreshSuccessToastBody,
+  type CatalogRefreshResult,
+} from "../../utils/catalogRefreshToast";
+import { toErrorDetails } from "../../utils/errorDetails";
 
 function showError(message: string): void {
   const handle = showModal(
@@ -35,10 +34,14 @@ const AddonsTab = ({ gameDir }: AddonsTabProps) => {
     setIsRefreshing(true);
     try {
       const res = await call<[boolean], CatalogRefreshResult>("catalog_refresh", true);
-      toaster.toast({
-        title: "RSM-Decky",
-        body: `Catalog refreshed (${res.shader_repo_count} shader repos, ${res.addon_count} add-ons).`,
-      });
+      if (res.force_refresh && res.ok && !res.warning) {
+        toaster.toast({
+          title: "RSM-Decky",
+          body: catalogRefreshSuccessToastBody(res),
+        });
+      } else {
+        showError(catalogRefreshDegradedModalBody(res));
+      }
     } catch (e: unknown) {
       showError(toErrorDetails(e));
     } finally {
