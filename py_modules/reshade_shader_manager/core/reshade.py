@@ -28,7 +28,7 @@ RESHADE_DOWNLOAD_BASE = "https://reshade.me/downloads"
 D3DCOMPILER_47_DOWNLOAD_URL = "https://lutris.net/files/tools/dll/d3dcompiler_47.dll"
 USER_AGENT = "reshade-shader-manager/0.1"
 
-# HLSL / D3D compile support for ReShade under Wine/Proton; never tracked in manifest (see install/remove).
+# HLSL / D3D compile support for ReShade under Wine/Proton; tracked only when RSM installed it.
 _D3D_COMPILER_BASENAME = "d3dcompiler_47.dll"
 _MINIMAL_RESHADE_INI_DECKY = (
     "[GENERAL]\n"
@@ -368,14 +368,19 @@ def remove_reshade_binaries(*, paths: RsmPaths, manifest: GameManifest) -> list[
     shader symlinks, or ``enabled_repo_ids``. Returns warnings for missing files.
     """
     warnings: list[str] = []
+    remaining_tracked: list[str] = []
     game_dir = canonical_game_dir(manifest.game_dir)
     for name in list(manifest.installed_reshade_files):
         p = game_dir / name
-        if p.is_file():
-            p.unlink()
+        if p.is_symlink() or p.exists():
+            try:
+                p.unlink()
+            except OSError as e:
+                warnings.append(f"failed to remove (kept tracked): {p} ({e})")
+                remaining_tracked.append(name)
         else:
             warnings.append(f"missing (skipped): {p}")
-    manifest.installed_reshade_files = []
+    manifest.installed_reshade_files = remaining_tracked
     save_game_manifest(paths, manifest)
     return warnings
 
