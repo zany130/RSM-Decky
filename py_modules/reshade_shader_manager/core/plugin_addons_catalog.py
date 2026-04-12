@@ -119,16 +119,6 @@ def _addons_from_cache_payload(data: dict[str, Any]) -> list[dict[str, str]]:
     return out
 
 
-def get_upstream_plugin_addons(
-    paths: RsmPaths,
-    *,
-    ttl_hours: float,
-    force_refresh: bool = False,
-) -> list[dict[str, str]]:
-    addons, _meta = get_upstream_plugin_addons_with_meta(paths, ttl_hours=ttl_hours, force_refresh=force_refresh)
-    return addons
-
-
 def get_upstream_plugin_addons_with_meta(
     paths: RsmPaths,
     *,

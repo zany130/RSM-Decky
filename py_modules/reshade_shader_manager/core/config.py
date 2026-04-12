@@ -61,14 +61,3 @@ def load_config(paths: RsmPaths) -> AppConfig:
     cfg = AppConfig.from_mapping(data)
     cfg.validate()
     return cfg
-
-
-def save_config(paths: RsmPaths, cfg: AppConfig) -> None:
-    cfg.validate()
-    path = paths.config_json()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(cfg.to_json_dict(), f, indent=2, sort_keys=True)
-        f.write("\n")
-    tmp.replace(path)

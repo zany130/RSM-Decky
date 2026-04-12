@@ -228,11 +228,6 @@ def cache_is_fresh(path: Path, ttl_hours: float) -> bool:
     return age_sec < ttl_hours * 3600.0
 
 
-def get_pcgw_repos(paths: RsmPaths, *, ttl_hours: float, force_refresh: bool = False) -> list[dict[str, str]]:
-    repos, _meta = get_pcgw_repos_with_meta(paths, ttl_hours=ttl_hours, force_refresh=force_refresh)
-    return repos
-
-
 def get_pcgw_repos_with_meta(
     paths: RsmPaths,
     *,

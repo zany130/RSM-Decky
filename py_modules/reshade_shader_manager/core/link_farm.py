@@ -335,55 +335,6 @@ def _link_path_for_dest_key(rs_base: Path, dest_key: str) -> Path:
     return rs_base.joinpath(*parts)
 
 
-def _recorded_path_to_dest_key(game_dir: Path, link_path_str: str) -> str | None:
-    try:
-        p = Path(link_path_str).absolute()
-    except OSError:
-        return None
-    try:
-        gd = canonical_game_dir(game_dir)
-    except OSError:
-        gd = Path(game_dir)
-    rs = gd / "reshade-shaders"
-    sh = rs / "Shaders"
-    tx = rs / "Textures"
-    try:
-        r = p.relative_to(sh)
-        return f"Shaders/{r.as_posix()}"
-    except ValueError:
-        pass
-    try:
-        r = p.relative_to(tx)
-        return f"Textures/{r.as_posix()}"
-    except ValueError:
-        return None
-
-
-def _occupied_dest_keys_from_manifest(
-    manifest: GameManifest,
-    game_dir: Path,
-    *,
-    exclude_repo_id: str | None,
-) -> dict[str, str]:
-    """Map canonical dest_key -> owning repo id for conflict checks."""
-    out: dict[str, str] = {}
-    ex = exclude_repo_id.strip().lower() if exclude_repo_id else None
-    for rid, links in manifest.symlinks_by_repo_id.items():
-        r = rid.strip().lower()
-        if ex is not None and r == ex:
-            continue
-        for link_str in links:
-            dk = _recorded_path_to_dest_key(game_dir, link_str)
-            if dk is None:
-                log.warning(
-                    "Recorded path %r is not under Shaders/ or Textures/; ignoring for conflict check",
-                    link_str,
-                )
-                continue
-            out[dk] = r
-    return out
-
-
 def _display_dest_key_for_log(dest_key: str) -> str:
     if dest_key.startswith("Shaders/"):
         return dest_key[len("Shaders/") :]
@@ -427,20 +378,6 @@ def _install_merged_entries(
         created.append(link)
         new_links.append(str(link.absolute()))
     return new_links
-
-
-def disable_shader_repo(*, paths: RsmPaths, manifest: GameManifest, repo_id: str) -> None:
-    """Remove symlinks recorded for ``repo_id`` and drop it from ``enabled_repo_ids``."""
-    rid = repo_id.strip().lower()
-    game_dir = canonical_game_dir(manifest.game_dir)
-    links = list(manifest.symlinks_by_repo_id.pop(rid, []))
-    for s in links:
-        unlink_recorded_projection_path(game_dir, Path(s))
-    if rid in manifest.enabled_repo_ids:
-        manifest.enabled_repo_ids = [x for x in manifest.enabled_repo_ids if x != rid]
-    save_game_manifest(paths, manifest)
-    for link in links:
-        _prune_empty_parents(Path(link), game_dir)
 
 
 def apply_shader_projection(
@@ -517,71 +454,3 @@ def apply_shader_projection(
 
     m.enabled_repo_ids = [r for r in sorted(desired_repo_ids) if r in m.symlinks_by_repo_id]
     save_game_manifest(paths, m)
-
-
-def enable_shader_repo(
-    *,
-    paths: RsmPaths,
-    manifest: GameManifest,
-    repo_id: str,
-    git_url: str,
-    git_pull: bool = True,
-) -> bool:
-    """
-    Clone or update global repo, then project into ``reshade-shaders`` (merged tree).
-
-    Supports standard ``Shaders`` / ``Textures`` at clone root, nested folders that
-    directly contain shader or texture files, and a per-file symlink fallback for
-    scattered ``.fx`` / ``.fxh`` (and texture extensions) under the clone.
-    """
-    rid = repo_id.strip().lower()
-    clone_dir = paths.repo_clone_dir(rid)
-    clone_or_pull(clone_dir, git_url, pull=git_pull)
-
-    gd = canonical_game_dir(manifest.game_dir)
-
-    entries, used_fallback = _enumerate_merged_projection_entries(clone_dir)
-    if not entries:
-        log.warning("Repo %r: no shader or texture files found — skipping enable", rid)
-        return False
-
-    occupied = _occupied_dest_keys_from_manifest(manifest, gd, exclude_repo_id=rid)
-    first_conflict: str | None = None
-    for dest_key, _src in entries:
-        if dest_key in occupied:
-            first_conflict = dest_key
-            break
-    if first_conflict is not None:
-        _log_repo_skip_conflict(first_conflict, occupied[first_conflict], rid)
-        return False
-
-    old_links = list(manifest.symlinks_by_repo_id.pop(rid, []))
-    for s in old_links:
-        unlink_recorded_projection_path(gd, Path(s))
-    for s in old_links:
-        _prune_empty_parents(Path(s), gd)
-
-    new_links = _install_merged_entries(game_dir=gd, entries=entries, repo_id=rid)
-    if not new_links:
-        log.warning("Repo %r: failed to create projection symlinks — skipping enable", rid)
-        manifest.symlinks_by_repo_id.pop(rid, None)
-        manifest.enabled_repo_ids = [x for x in manifest.enabled_repo_ids if x != rid]
-        save_game_manifest(paths, manifest)
-        for link in old_links:
-            _prune_empty_parents(Path(link), gd)
-        return False
-
-    if used_fallback:
-        log.warning(
-            "Repo %r: non-standard layout — file-based symlink fallback in use; prefer Shaders/ and Textures/ roots when possible",
-            rid,
-        )
-
-    manifest.symlinks_by_repo_id[rid] = new_links
-    if rid not in manifest.enabled_repo_ids:
-        manifest.enabled_repo_ids.append(rid)
-    manifest.enabled_repo_ids.sort()
-    save_game_manifest(paths, manifest)
-    for link in old_links:
-        _prune_empty_parents(Path(link), gd)
-    return True

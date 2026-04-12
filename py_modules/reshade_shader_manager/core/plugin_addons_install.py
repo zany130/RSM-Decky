@@ -86,18 +86,6 @@ def installability_detail(entry: dict[str, str], *, arch: str) -> tuple[bool, st
         return False, str(e)
 
 
-def filter_catalog_installable_for_arch(
-    catalog: list[dict[str, str]], *, arch: str
-) -> list[dict[str, str]]:
-    """Return only rows installable for ``arch`` (e.g. hide 64-only add-ons when the game is 32-bit)."""
-    out: list[dict[str, str]] = []
-    for row in catalog:
-        ok, _ = installability_detail(row, arch=arch)
-        if ok:
-            out.append(row)
-    return out
-
-
 def _http_download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
