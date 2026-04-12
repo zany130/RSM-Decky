@@ -193,7 +193,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
       return;
     }
     await runAction(
-      "ReShade installed.",
+      "ReShade installed / reinstalled.",
       () =>
         call<[string, string, string, string], { message?: string }>(
           "reshade_install",
@@ -211,7 +211,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
       return;
     }
     await runAction(
-      "ReShade updated / reinstalled.",
+      "ReShade updated.",
       () =>
         call<[string, string, string], { message?: string }>(
           "reshade_update_reinstall",
@@ -281,7 +281,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
             disabled={installDisabled}
             onClick={onInstall}
           >
-            Install
+            Install / Reinstall
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
@@ -292,7 +292,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
             }
             onClick={onUpdateReinstall}
           >
-            Update / Reinstall
+            Update
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>

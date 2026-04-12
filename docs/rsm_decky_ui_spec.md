@@ -103,8 +103,8 @@ Notes:
 
 #### 3. Actions
 Buttons:
-- **Install**
-- **Update / Reinstall**
+- **Install / Reinstall**
+- **Update**
 - **Uninstall**
 - **Check**
 
@@ -270,7 +270,7 @@ Exact fields can be finalized during implementation, but this is intentionally a
 Toasts are used for successful operations only.
 
 Examples:
-- ReShade installed successfully
+- ReShade installed / reinstalled successfully
 - Catalog refreshed
 - 3 shaders applied successfully
 - 2 add-ons applied successfully
@@ -297,7 +297,7 @@ Use these labels consistently throughout the plugin:
 - **Manage Add-ons**
 - **Uninstall**
 - **Refresh Catalog**
-- **Update / Reinstall**
+- **Update**
 
 Avoid mixing alternative labels unless required by backend naming.
 
@@ -325,8 +325,8 @@ Variant        [ Standard ▼ ]
 Version        [ Latest ▼ ]
 
 Actions
-[ Install ]
-[ Update / Reinstall ]
+[ Install / Reinstall ]
+[ Update ]
 [ Uninstall ]
 [ Check ]
 ```

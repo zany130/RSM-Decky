@@ -418,7 +418,7 @@ class RsmDeckyService:
             reshade_version=ver,
             variant=variant,
         )
-        return {"manifest": m.to_json_dict(), "message": f"ReShade installed ({m.reshade_version})."}
+        return {"manifest": m.to_json_dict(), "message": f"ReShade installed / reinstalled ({m.reshade_version})."}
 
     def reshade_update_reinstall(self, game_dir: str, graphics_api: str, variant: str) -> dict:
         return self.reshade_install(game_dir, graphics_api, variant, "latest")
