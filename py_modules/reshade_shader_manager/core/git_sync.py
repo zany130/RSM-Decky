@@ -43,12 +43,17 @@ def _sanitized_git_env() -> tuple[dict[str, str], list[str]]:
     return env, removed
 
 
-def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull: bool = True) -> None:
+def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull: bool = True) -> bool | None:
     """
     If ``repo_dir`` is missing or not a git working tree, ``git clone`` into ``repo_dir``.
 
     If it is already a clone and ``pull`` is True, run ``git pull --rebase=false``.
     If ``pull`` is False, an existing clone is left as-is (no fetch/pull).
+
+    Returns:
+    - ``True`` when clone/pull changed content.
+    - ``False`` when pull succeeds but reports already up to date.
+    - ``None`` when existing clone is skipped because ``pull=False``.
     """
     repo_dir = repo_dir.resolve()
     with _git_lock:
@@ -61,7 +66,7 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                 started = time.monotonic()
                 log.info("git pull start repo_dir=%s git_url=%s timeout=%ss", repo_dir, git_url, timeout)
                 try:
-                    subprocess.run(
+                    proc = subprocess.run(
                         ["git", "-C", str(repo_dir), "pull", "--rebase=false"],
                         check=True,
                         timeout=timeout,
@@ -75,6 +80,8 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                         repo_dir,
                         elapsed,
                     )
+                    pull_output = f"{proc.stdout}\n{proc.stderr}".lower()
+                    return "already up to date" not in pull_output and "already up-to-date" not in pull_output
                 except subprocess.TimeoutExpired as e:
                     elapsed = time.monotonic() - started
                     log.error(
@@ -99,6 +106,7 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                     raise
             else:
                 log.debug("Skipping git pull for existing repo %s", repo_dir)
+                return None
         else:
             repo_dir.parent.mkdir(parents=True, exist_ok=True)
             started = time.monotonic()
@@ -119,6 +127,7 @@ def clone_or_pull(repo_dir: Path, git_url: str, *, timeout: float = 300.0, pull:
                     repo_dir,
                     elapsed,
                 )
+                return True
             except subprocess.TimeoutExpired as e:
                 elapsed = time.monotonic() - started
                 log.error(
@@ -157,11 +166,12 @@ def pull_existing_clones_for_catalog(
 
     Returns pull stats:
     - ``attempted_count``
-    - ``updated_count``
+    - ``updated_count`` (clones where pull reported actual changes)
     - ``failures`` (list of ``\"<repo_id>: <message>\"``)
     """
     failures: list[str] = []
     attempted = 0
+    changed = 0
     for r in catalog:
         rid = str(r.get("id", "")).strip()
         url = (r.get("git_url") or "").strip()
@@ -172,11 +182,13 @@ def pull_existing_clones_for_catalog(
             continue
         attempted += 1
         try:
-            clone_or_pull(d, url, pull=True, timeout=timeout)
+            did_change = clone_or_pull(d, url, pull=True, timeout=timeout)
+            if did_change is True:
+                changed += 1
         except Exception as e:  # noqa: BLE001
             failures.append(f"{rid}: {e}")
     return {
         "attempted_count": attempted,
-        "updated_count": max(0, attempted - len(failures)),
+        "updated_count": changed,
         "failures": failures,
     }

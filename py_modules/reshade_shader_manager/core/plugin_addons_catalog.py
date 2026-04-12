@@ -125,6 +125,16 @@ def get_upstream_plugin_addons(
     ttl_hours: float,
     force_refresh: bool = False,
 ) -> list[dict[str, str]]:
+    addons, _meta = get_upstream_plugin_addons_with_meta(paths, ttl_hours=ttl_hours, force_refresh=force_refresh)
+    return addons
+
+
+def get_upstream_plugin_addons_with_meta(
+    paths: RsmPaths,
+    *,
+    ttl_hours: float,
+    force_refresh: bool = False,
+) -> tuple[list[dict[str, str]], dict[str, bool]]:
     """
     Return normalized upstream plugin add-ons, refreshing ``Addons.ini`` when stale.
 
@@ -134,7 +144,14 @@ def get_upstream_plugin_addons(
     if not force_refresh and cache_is_fresh(cache_path, ttl_hours):
         data = load_plugin_addons_cache(cache_path)
         if data:
-            return _addons_from_cache_payload(data)
+            return (
+                _addons_from_cache_payload(data),
+                {
+                    "upstream_ok": True,
+                    "used_stale_cache": False,
+                    "from_ttl_cache": True,
+                },
+            )
 
     stale = load_plugin_addons_cache(cache_path)
     stale_payload = _addons_from_cache_payload(stale) if stale else []
@@ -143,13 +160,20 @@ def get_upstream_plugin_addons(
     if text is None:
         if stale_payload:
             log.warning("Plugin add-on catalog fetch failed (%s); using stale cache", err or "unknown error")
-            return stale_payload
+            return (
+                stale_payload,
+                {
+                    "upstream_ok": False,
+                    "used_stale_cache": True,
+                    "from_ttl_cache": False,
+                },
+            )
         if err:
             log.warning("Plugin add-on catalog fetch failed (%s) and no cache", err)
         else:
             log.warning("Plugin add-on catalog fetch failed (unknown error) and no cache")
         save_plugin_addons_cache(cache_path, [], err)
-        return []
+        return [], {"upstream_ok": False, "used_stale_cache": False, "from_ttl_cache": False}
 
     addons: list[dict[str, str]] = []
     combined_err: str | None = err
@@ -161,6 +185,13 @@ def get_upstream_plugin_addons(
         log.warning("Addons.ini parse failed: %s", e)
     if combined_err and not addons and stale_payload:
         log.warning("Using stale plugin add-on cache after refresh failure (%s)", combined_err)
-        return stale_payload
+        return (
+            stale_payload,
+            {
+                "upstream_ok": False,
+                "used_stale_cache": True,
+                "from_ttl_cache": False,
+            },
+        )
     save_plugin_addons_cache(cache_path, addons, combined_err)
-    return addons
+    return addons, {"upstream_ok": True, "used_stale_cache": False, "from_ttl_cache": False}

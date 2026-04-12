@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from reshade_shader_manager.core.catalog_ops import fetch_merged_catalogs
+from reshade_shader_manager.core.catalog_ops import fetch_merged_catalogs, fetch_merged_catalogs_with_meta
 from reshade_shader_manager.core.config import AppConfig, load_config
 from reshade_shader_manager.core.exceptions import RSMError
 from reshade_shader_manager.core.git_sync import pull_existing_clones_for_catalog
@@ -56,11 +56,58 @@ class RsmDeckyService:
 
     def catalog_refresh(self, force_refresh: bool) -> dict:
         paths, cfg = _paths_cfg()
-        shader_cat, addon_cat = fetch_merged_catalogs(paths, cfg, force_refresh=force_refresh)
+        before_shader_cat: list[dict] = []
+        before_addon_cat: list[dict] = []
+        if force_refresh:
+            before_shader_cat, before_addon_cat = fetch_merged_catalogs(paths, cfg, force_refresh=False)
+
+        shader_cat, addon_cat, source_meta = fetch_merged_catalogs_with_meta(
+            paths, cfg, force_refresh=force_refresh
+        )
+
+        def _id_set(rows: list[dict]) -> set[str]:
+            out: set[str] = set()
+            for row in rows:
+                rid = str(row.get("id", "")).strip().lower()
+                if rid:
+                    out.add(rid)
+            return out
+
+        changed = False
+        if force_refresh:
+            changed = _id_set(before_shader_cat) != _id_set(shader_cat) or _id_set(before_addon_cat) != _id_set(
+                addon_cat
+            )
+
+        pcgw_upstream_ok = bool(source_meta["pcgw_upstream_ok"])
+        addons_upstream_ok = bool(source_meta["addons_upstream_ok"])
+        pcgw_used_stale_cache = bool(source_meta["pcgw_used_stale_cache"])
+        addons_used_stale_cache = bool(source_meta["addons_used_stale_cache"])
+
+        if pcgw_upstream_ok and addons_upstream_ok:
+            status = "success_with_changes" if changed else "success_no_changes"
+        elif pcgw_used_stale_cache or addons_used_stale_cache:
+            status = "failed_with_cache"
+        else:
+            status = "failed_no_cache"
+
+        builtin_shader_repo_count = sum(
+            1 for row in shader_cat if str(row.get("source", "")).strip().lower() == "built-in"
+        )
+
         return {
+            "status": status,
             "shader_repo_count": len(shader_cat),
             "addon_count": len(addon_cat),
             "force_refresh": bool(force_refresh),
+            "builtin_shader_repo_count": builtin_shader_repo_count,
+            "changed": changed,
+            "pcgw_upstream_ok": pcgw_upstream_ok,
+            "pcgw_used_stale_cache": pcgw_used_stale_cache,
+            "pcgw_from_ttl_cache": bool(source_meta["pcgw_from_ttl_cache"]),
+            "addons_upstream_ok": addons_upstream_ok,
+            "addons_used_stale_cache": addons_used_stale_cache,
+            "addons_from_ttl_cache": bool(source_meta["addons_from_ttl_cache"]),
         }
 
     def catalog_update_clones(self) -> dict:
@@ -76,9 +123,24 @@ class RsmDeckyService:
 
         pull_stats = pull_existing_clones_for_catalog(paths, shader_cat)
         failures = pull_stats.get("failures", [])
+        existing_clone_count = len(existing_repo_ids)
+        updated_count = int(pull_stats.get("updated_count", 0))
+        failed_count = len(failures)
+        if existing_clone_count == 0:
+            status = "no_clones"
+        elif failed_count >= existing_clone_count:
+            status = "complete_failure"
+        elif failed_count > 0:
+            status = "partial_failure"
+        elif updated_count > 0:
+            status = "updated"
+        else:
+            status = "already_up_to_date"
         return {
-            "existing_clone_count": len(existing_repo_ids),
-            "updated_count": int(pull_stats.get("updated_count", 0)),
+            "status": status,
+            "existing_clone_count": existing_clone_count,
+            "updated_count": updated_count,
+            "failed_count": failed_count,
             "failures": failures,
         }
 

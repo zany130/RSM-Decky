@@ -229,6 +229,16 @@ def cache_is_fresh(path: Path, ttl_hours: float) -> bool:
 
 
 def get_pcgw_repos(paths: RsmPaths, *, ttl_hours: float, force_refresh: bool = False) -> list[dict[str, str]]:
+    repos, _meta = get_pcgw_repos_with_meta(paths, ttl_hours=ttl_hours, force_refresh=force_refresh)
+    return repos
+
+
+def get_pcgw_repos_with_meta(
+    paths: RsmPaths,
+    *,
+    ttl_hours: float,
+    force_refresh: bool = False,
+) -> tuple[list[dict[str, str]], dict[str, bool]]:
     """
     Return cached PCGW repo list, refreshing if stale or ``force_refresh``.
 
@@ -238,20 +248,34 @@ def get_pcgw_repos(paths: RsmPaths, *, ttl_hours: float, force_refresh: bool = F
     if not force_refresh and cache_is_fresh(cache_path, ttl_hours):
         data = load_pcgw_cache(cache_path)
         if data and isinstance(data.get("repos"), list):
-            return [r for r in data["repos"] if isinstance(r, dict)]
+            return (
+                [r for r in data["repos"] if isinstance(r, dict)],
+                {
+                    "upstream_ok": True,
+                    "used_stale_cache": False,
+                    "from_ttl_cache": True,
+                },
+            )
 
     stale = load_pcgw_cache(cache_path)
     repos, err = fetch_pcgw_repos_raw()
     if repos:
         save_pcgw_cache(cache_path, repos, err)
-        return repos
+        return repos, {"upstream_ok": True, "used_stale_cache": False, "from_ttl_cache": False}
     if err is None:
         # Successful fetch with no matches: persist empty result as fresh.
         save_pcgw_cache(cache_path, [], None)
-        return []
+        return [], {"upstream_ok": True, "used_stale_cache": False, "from_ttl_cache": False}
     if stale and isinstance(stale.get("repos"), list):
         log.warning("PCGW fetch failed (%s); using stale cache", err or "unknown error")
-        return [r for r in stale["repos"] if isinstance(r, dict)]
+        return (
+            [r for r in stale["repos"] if isinstance(r, dict)],
+            {
+                "upstream_ok": False,
+                "used_stale_cache": True,
+                "from_ttl_cache": False,
+            },
+        )
     save_pcgw_cache(cache_path, [], err)
     log.warning("PCGW fetch failed (%s) and no cache", err or "unknown error")
-    return []
+    return [], {"upstream_ok": False, "used_stale_cache": False, "from_ttl_cache": False}

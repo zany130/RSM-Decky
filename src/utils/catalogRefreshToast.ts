@@ -1,41 +1,40 @@
 export type CatalogRefreshResult = {
+  status: "success_no_changes" | "success_with_changes" | "failed_with_cache" | "failed_no_cache";
   shader_repo_count: number;
   addon_count: number;
   force_refresh: boolean;
-  ok: boolean;
   builtin_shader_repo_count: number;
+  changed: boolean;
   pcgw_upstream_ok: boolean;
   pcgw_used_stale_cache: boolean;
   pcgw_from_ttl_cache: boolean;
   addons_upstream_ok: boolean;
   addons_used_stale_cache: boolean;
   addons_from_ttl_cache: boolean;
-  warning: string | null;
+  message?: string;
 };
 
-function catalogSummaryLine(res: CatalogRefreshResult): string {
-  return `${res.shader_repo_count} shader repos (${res.builtin_shader_repo_count} built-in), ${res.addon_count} add-ons`;
-}
-
-/** Full upstream success (Decky: user forced refresh and both sources OK). */
 export function catalogRefreshSuccessToastBody(res: CatalogRefreshResult): string {
-  return `Catalog refreshed from upstream: ${catalogSummaryLine(res)}.`;
+  if (res.status === "success_no_changes") {
+    return "Catalog is already up to date.";
+  }
+  return "Catalog refreshed successfully.";
 }
 
-/** Degraded or incomplete refresh: modal copy (not a success toast). */
 export function catalogRefreshDegradedModalBody(res: CatalogRefreshResult): string {
-  const lines = [
-    "Catalog refresh failed or was incomplete. Counts below may reflect cached data, built-in repositories only, or partial upstream results.",
-    "",
-    catalogSummaryLine(res) + ".",
-  ];
-  if (res.warning) {
-    lines.push("");
-    lines.push(res.warning);
+  if (res.status === "failed_with_cache") {
+    return "Catalog refresh failed. Showing cached data.";
   }
-  if (res.force_refresh && !res.ok) {
+  const lines = ["Catalog refresh failed. No cached catalog available."];
+  if (res.builtin_shader_repo_count > 0) {
     lines.push("");
-    lines.push("One or both upstream sources did not confirm a successful refresh.");
+    lines.push(
+      `Built-in shader repositories are still available (${res.builtin_shader_repo_count}).`
+    );
+  }
+  if (res.message && res.message.trim()) {
+    lines.push("");
+    lines.push(res.message.trim());
   }
   return lines.join("\n");
 }
