@@ -403,18 +403,7 @@ def apply_shader_projection(
     m = load_game_manifest(paths, game_dir) or new_game_manifest(game_dir)
     gd = canonical_game_dir(m.game_dir)
 
-    recorded: list[str] = []
-    for plist in m.symlinks_by_repo_id.values():
-        recorded.extend(plist)
-    for s in dict.fromkeys(recorded):
-        unlink_recorded_projection_path(gd, Path(s))
-    for s in dict.fromkeys(recorded):
-        _prune_empty_parents(Path(s), gd)
-
-    m.symlinks_by_repo_id.clear()
-    m.enabled_repo_ids.clear()
-    save_game_manifest(paths, m)
-
+    planned: list[tuple[str, list[tuple[str, Path]], bool]] = []
     owner: dict[str, str] = {}
 
     for rid in sorted(desired_repo_ids):
@@ -448,6 +437,31 @@ def apply_shader_projection(
             continue
         for k in keys:
             owner[k] = rid
+        planned.append((rid, entries, used_fb))
+
+    # Commit point: only clear existing projection state after all desired repos
+    # have been validated/prepared (clone + layout enumeration) successfully.
+    recorded: list[str] = []
+    for plist in m.symlinks_by_repo_id.values():
+        recorded.extend(plist)
+    for s in dict.fromkeys(recorded):
+        unlink_recorded_projection_path(gd, Path(s))
+    for s in dict.fromkeys(recorded):
+        _prune_empty_parents(Path(s), gd)
+
+    m.symlinks_by_repo_id.clear()
+    m.enabled_repo_ids.clear()
+
+    for rid, entries, used_fb in planned:
+        if used_fb:
+            log.warning(
+                "Repo %r: non-standard layout — file-based symlink fallback in use; prefer Shaders/ and Textures/ roots when possible",
+                rid,
+            )
+        links = _install_merged_entries(game_dir=gd, entries=entries, repo_id=rid)
+        if not links:
+            log.warning("Repo %r: failed to create projection symlinks — skipping enable", rid)
+            continue
         m.symlinks_by_repo_id[rid] = links
         if rid not in m.enabled_repo_ids:
             m.enabled_repo_ids.append(rid)

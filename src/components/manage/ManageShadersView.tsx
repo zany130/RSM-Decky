@@ -186,7 +186,6 @@ const ManageShadersView = ({ gameDir, onExit }: ManageShadersViewProps) => {
     try {
       const desiredIds = Array.from(desired).sort((a, b) => a.localeCompare(b));
       await call<[string, string[]], ShadersApplyResult>("shaders_apply", gameDir, desiredIds);
-      setBaseline(new Set(desiredIds));
       await loadPreflight(desiredIds);
       toaster.toast({ title: "RSM-Decky", body: "Shader selection applied." });
       onExit();
