@@ -12,8 +12,10 @@ import {
 import { toErrorDetails } from "../../utils/errorDetails";
 
 type UpdateClonesResult = {
+  status: "updated" | "already_up_to_date" | "partial_failure" | "complete_failure" | "no_clones";
   existing_clone_count: number;
   updated_count: number;
+  failed_count: number;
   failures: string[];
 };
 
@@ -47,13 +49,18 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
     setBusyAction("refresh");
     try {
       const res = await call<[boolean], CatalogRefreshResult>("catalog_refresh", true);
-      if (res.force_refresh && res.ok && !res.warning) {
-        toaster.toast({
-          title: "RSM-Decky",
-          body: catalogRefreshSuccessToastBody(res),
-        });
-      } else {
-        showError(catalogRefreshDegradedModalBody(res));
+      switch (res.status) {
+        case "success_no_changes":
+        case "success_with_changes":
+          toaster.toast({
+            title: "RSM-Decky",
+            body: catalogRefreshSuccessToastBody(res),
+          });
+          break;
+        case "failed_with_cache":
+        case "failed_no_cache":
+          showError(catalogRefreshDegradedModalBody(res));
+          break;
       }
     } catch (e: unknown) {
       showError(toErrorDetails(e));
@@ -66,23 +73,32 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
     setBusyAction("update");
     try {
       const res = await call<[], UpdateClonesResult>("catalog_update_clones");
-      if (res.failures.length) {
-        showError(
-          `Updated ${res.updated_count}/${res.existing_clone_count} existing clones.\n\nFailures:\n${res.failures.join(
-            "\n"
-          )}`
-        );
-      } else if (res.updated_count === 0) {
-        showError(
-          res.existing_clone_count === 0
-            ? "No local repository clones were found to update. Use Manage Shaders to enable repos so clones can be created first."
-            : "No local clones reported new commits to pull (they may already be up to date). This is not the same as a full catalog refresh."
-        );
-      } else {
-        toaster.toast({
-          title: "RSM-Decky",
-          body: `Updated ${res.updated_count} local clone(s).`,
-        });
+      switch (res.status) {
+        case "updated":
+          toaster.toast({
+            title: "RSM-Decky",
+            body: `Updated ${res.updated_count} local clone(s).`,
+          });
+          break;
+        case "already_up_to_date":
+          toaster.toast({
+            title: "RSM-Decky",
+            body: "Local clones are already up to date.",
+          });
+          break;
+        case "partial_failure":
+          showError(
+            `Updated ${res.updated_count} local clone(s), but ${res.failed_count} failed.\n\nFailures:\n${res.failures.join(
+              "\n"
+            )}`
+          );
+          break;
+        case "complete_failure":
+          showError("Failed to update local clones.");
+          break;
+        case "no_clones":
+          showError("No local clones found to update.");
+          break;
       }
     } catch (e: unknown) {
       showError(toErrorDetails(e));
@@ -135,12 +151,12 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
       <PanelSection title="Shaders">
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={disabled} onClick={refreshCatalog}>
-            {busyAction === "refresh" ? "Refreshing..." : "Refresh Catalog"}
+            {busyAction === "refresh" ? "Refreshing..." : "Refresh Shader Catalog"}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={disabled} onClick={updateClones}>
-            {busyAction === "update" ? "Updating..." : "Update Local Clones"}
+            {busyAction === "update" ? "Updating..." : "Update Downloaded Shader Repos"}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>

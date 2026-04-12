@@ -34,13 +34,18 @@ const AddonsTab = ({ gameDir }: AddonsTabProps) => {
     setIsRefreshing(true);
     try {
       const res = await call<[boolean], CatalogRefreshResult>("catalog_refresh", true);
-      if (res.force_refresh && res.ok && !res.warning) {
-        toaster.toast({
-          title: "RSM-Decky",
-          body: catalogRefreshSuccessToastBody(res),
-        });
-      } else {
-        showError(catalogRefreshDegradedModalBody(res));
+      switch (res.status) {
+        case "success_no_changes":
+        case "success_with_changes":
+          toaster.toast({
+            title: "RSM-Decky",
+            body: catalogRefreshSuccessToastBody(res),
+          });
+          break;
+        case "failed_with_cache":
+        case "failed_no_cache":
+          showError(catalogRefreshDegradedModalBody(res));
+          break;
       }
     } catch (e: unknown) {
       showError(toErrorDetails(e));
@@ -58,7 +63,7 @@ const AddonsTab = ({ gameDir }: AddonsTabProps) => {
       <PanelSection title="Add-ons">
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={isRefreshing} onClick={refreshCatalog}>
-            {isRefreshing ? "Refreshing..." : "Refresh Catalog"}
+            {isRefreshing ? "Refreshing..." : "Refresh Addon Catalog"}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
