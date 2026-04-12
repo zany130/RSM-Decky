@@ -7,7 +7,7 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
 - GTK app + CLI backend project: [reshade-shader-manager](https://github.com/zany130/reshadeshadermanager)
 
-## Current Feature Set (v0.1.x)
+## Current Feature Set (v1.0.0)
 
 - Per-game launch entry in the Steam library context menu
 - ReShade install/update/uninstall/check per selected game
@@ -18,7 +18,7 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
 ## Status
 
-Early working release (`v0.1.x`): stable enough for manual installs and testing, but still under active iteration.
+`v1.0.0` is the focused release for stable per-game ReShade, shader repository, and add-on management on Steam Deck.
 
 ## Install from Release Zip (Users)
 
@@ -72,6 +72,6 @@ Build end-user release zip:
 
 ## Known Limitations / Caveats
 
-- v0.1 targets standard Steam game installs; non-Steam shortcuts may fail fast.
+- v1.0.0 targets standard Steam game installs; non-Steam shortcuts may fail fast.
 - TLS fallback behavior may be required on some systems with broken CA trust chains.
 - Add-ons are filtered by detected game architecture; incompatible entries are hidden.
