@@ -77,27 +77,27 @@ const ShadersTab = ({ gameDir }: ShadersTabProps) => {
         case "updated":
           toaster.toast({
             title: "RSM-Decky",
-            body: `Updated ${res.updated_count} local clone(s).`,
+            body: `Updated ${res.updated_count} downloaded shader repo(s).`,
           });
           break;
         case "already_up_to_date":
           toaster.toast({
             title: "RSM-Decky",
-            body: "Local clones are already up to date.",
+            body: "Downloaded shader repos are already up to date.",
           });
           break;
         case "partial_failure":
           showError(
-            `Updated ${res.updated_count} local clone(s), but ${res.failed_count} failed.\n\nFailures:\n${res.failures.join(
+            `Updated ${res.updated_count} downloaded shader repo(s), but ${res.failed_count} failed.\n\nFailures:\n${res.failures.join(
               "\n"
             )}`
           );
           break;
         case "complete_failure":
-          showError("Failed to update local clones.");
+          showError("Failed to update downloaded shader repos.");
           break;
         case "no_clones":
-          showError("No local clones found to update.");
+          showError("No downloaded shader repos found to update.");
           break;
       }
     } catch (e: unknown) {

@@ -11,7 +11,7 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
 - Per-game launch entry in the Steam library context menu
 - ReShade install/update/uninstall/check per selected game
-- Shader catalog refresh and local clone update
+- Shader catalog refresh and downloaded shader repo update
 - Add custom shader repositories
 - Manage shader enable/disable selection with apply flow
 - Manage plugin add-ons with architecture-aware filtering
