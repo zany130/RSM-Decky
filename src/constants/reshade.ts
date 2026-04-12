@@ -9,6 +9,6 @@ export const GRAPHICS_API_OPTIONS = [
 ] as const;
 
 export const VARIANT_OPTIONS = [
-  { data: "standard", label: "Standard" },
-  { data: "addon", label: "Add-on" },
+  { data: "standard", label: "standard (recommended)" },
+  { data: "addon", label: "addon" },
 ] as const;

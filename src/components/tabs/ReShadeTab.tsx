@@ -33,7 +33,6 @@ type ReshadeStatus = {
   reshade_version: string | null;
   variant: string | null;
   arch: string | null;
-  check: { ok: boolean; missing_files: string[]; warnings: string[] } | null;
   arch_error: string | null;
 };
 
@@ -52,6 +51,37 @@ function showError(message: string): void {
     />,
     window as unknown as EventTarget
   );
+}
+
+function showAddonVersionWarning(): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let handle: { Close: () => void } | undefined;
+    const settle = (result: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(result);
+      handle?.Close();
+    };
+    handle = showModal(
+      <ConfirmModal
+        bAlertDialog
+        strTitle="Addon version warning"
+        strDescription={
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            {"The addon version of ReShade may trigger anti-cheat or integrity systems in some games.\n\nDo NOT use this in online or multiplayer games.\n\nContinue only if you understand the risk."}
+          </div>
+        }
+        onCancel={() => settle(false)}
+        onOK={() => settle(true)}
+        strCancelButtonText="Cancel"
+        strOKButtonText="Continue"
+      />,
+      window as unknown as EventTarget
+    );
+  });
 }
 
 // TEMP DEBUG: kept for troubleshooting, gated by RSM_DEBUG_CEF.
@@ -165,6 +195,14 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
   const variantForUpdate = variant || (status?.variant ?? "") || "standard";
 
   const combinedArchError = resolveArchError || status?.arch_error;
+  const shouldWarnForAddonVariant = (v: string) => v.trim().toLowerCase() === "addon";
+
+  const confirmAddonRiskIfNeeded = async (variantValue: string): Promise<boolean> => {
+    if (!shouldWarnForAddonVariant(variantValue)) {
+      return true;
+    }
+    return showAddonVersionWarning();
+  };
 
   const statusLines = () => {
     if (!status) {
@@ -180,36 +218,44 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
       `Manifest version: ${status.reshade_version ?? "—"}`,
       `Variant: ${status.variant ?? "—"}`,
     ];
-    if (status.check) {
-      parts.push(`Check: ${status.check.ok ? "OK" : "FAILED"}`);
-      if (!status.check.ok && status.check.missing_files.length) {
-        parts.push(`Missing: ${status.check.missing_files.length} file(s)`);
-      }
-    }
     return parts.join("\n");
   };
 
-  const onCheck = async () => {
-    setActionBusy(true);
-    try {
-      const r = await call<[string], { ok: boolean; missing_files: string[]; warnings: string[] }>(
-        "reshade_check",
-        gameDir
-      );
-      if (!r.ok) {
-        showError(
-          `ReShade check failed.\n\nMissing files:\n${r.missing_files.join("\n") || "(none listed)"}`
-        );
-        await loadData();
-        return;
-      }
-      toaster.toast({ title: "RSM-Decky", body: "ReShade check passed." });
-      await loadData();
-    } catch (e: unknown) {
-      showError(toErrorDetails(e));
-    } finally {
-      setActionBusy(false);
+  const onInstall = async () => {
+    const confirmed = await confirmAddonRiskIfNeeded(variant);
+    if (!confirmed) {
+      return;
     }
+    await runAction(
+      "ReShade installed.",
+      () =>
+        call<[string, string, string, string], { message?: string }>(
+          "reshade_install",
+          gameDir,
+          graphicsApi,
+          variant,
+          version.trim() || "latest"
+        ),
+      "install"
+    );
+  };
+
+  const onUpdateReinstall = async () => {
+    const confirmed = await confirmAddonRiskIfNeeded(variantForUpdate);
+    if (!confirmed) {
+      return;
+    }
+    await runAction(
+      "ReShade updated / reinstalled.",
+      () =>
+        call<[string, string, string], { message?: string }>(
+          "reshade_update_reinstall",
+          gameDir,
+          apiForUpdate,
+          variantForUpdate
+        ),
+      "update"
+    );
   };
 
   return (
@@ -269,20 +315,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
           <ButtonItem
             layout="below"
             disabled={installDisabled}
-            onClick={() =>
-              runAction(
-                "ReShade installed.",
-                () =>
-                  call<[string, string, string, string], { message?: string }>(
-                    "reshade_install",
-                    gameDir,
-                    graphicsApi,
-                    variant,
-                    version.trim() || "latest"
-                  ),
-                "install"
-              )
-            }
+            onClick={onInstall}
           >
             Install
           </ButtonItem>
@@ -293,19 +326,7 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
             disabled={
               busy || actionBusy || !!(resolveArchError || status?.arch_error) || !apiForUpdate || !status?.has_manifest
             }
-            onClick={() =>
-              runAction(
-                "ReShade updated / reinstalled.",
-                () =>
-                  call<[string, string, string], { message?: string }>(
-                    "reshade_update_reinstall",
-                    gameDir,
-                    apiForUpdate,
-                    variantForUpdate
-                  ),
-                "update"
-              )
-            }
+            onClick={onUpdateReinstall}
           >
             Update / Reinstall
           </ButtonItem>
@@ -321,11 +342,6 @@ const ReShadeTab = ({ gameDir }: ReShadeTabProps) => {
             }
           >
             Uninstall
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem layout="below" disabled={busy || actionBusy || !status?.has_manifest} onClick={onCheck}>
-            Check
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
