@@ -32,40 +32,41 @@ function firstMeaningfulStackLine(stack: string | undefined): string | null {
   if (!stack) {
     return null;
   }
-  let jsFrameFallback: string | null = null;
-  for (const raw of stack.split("\n")) {
-    const line = raw.trim();
-    if (!line) {
-      continue;
-    }
-    if (
-      line === "Traceback (most recent call last):" ||
-      /^File ".*", line \d+, in .+$/.test(line)
-    ) {
+  const lines = stack
+    .split("\n")
+    .map((raw) => raw.trim())
+    .filter(Boolean);
+
+  const isTracebackBoilerplate = (line: string): boolean =>
+    /^python traceback \(most recent call last\):$/i.test(line) ||
+    /^traceback \(most recent call last\):$/i.test(line) ||
+    /^file ".*", line \d+, in .+$/i.test(line);
+
+  // Prefer the final meaningful Python exception line in traceback text.
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i];
+    if (isTracebackBoilerplate(line)) {
       continue;
     }
     const pyException = /^([A-Za-z_][\w.]*)\s*:\s*(.+)$/.exec(line);
-    if (pyException) {
-      const exName = pyException[1].trim();
-      const exMsg = pyException[2].trim();
-      if (!isUselessErrorText(exName, `${exName}: ${exMsg}`)) {
-        return `${exName}: ${exMsg}`;
-      }
-    }
-    if (isUselessErrorText("Error", line)) {
+    if (!pyException) {
       continue;
     }
+    const exName = pyException[1].trim();
+    const exMsg = pyException[2].trim();
+    if (isUselessErrorText(exName, exMsg)) {
+      continue;
+    }
+    return `${exName}: ${exMsg}`;
+  }
+
+  // Only if no useful Python exception line exists, fall back to JS frames.
+  for (const line of lines) {
     if (/^at\s/i.test(line)) {
-      if (!jsFrameFallback) {
-        jsFrameFallback = line;
-      }
-      continue;
-    }
-    if (!isUselessErrorText("Python Exception", line)) {
       return line;
     }
   }
-  return jsFrameFallback;
+  return null;
 }
 
 type ErrorExtras = Error & {
