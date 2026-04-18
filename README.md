@@ -56,6 +56,12 @@ Build end-user release zip:
 - Shader repos: merged built-in repos + PCGamingWiki-derived list + user-added repos
 - Plugin add-ons: official `Addons.ini` catalog from [crosire/reshade-shaders](https://github.com/crosire/reshade-shaders)
 
+## Disclaimer
+
+This is a personal project built with [Cursor](https://www.cursor.com/) AI-assisted development.
+It is provided as-is with no guarantees of active maintenance.
+Issues will be looked at if they can be reproduced, or if a pull request is provided.
+
 ## Known Limitations / Caveats
 
 - v1.0.0 targets standard Steam game installs; non-Steam shortcuts may not work correctly.
