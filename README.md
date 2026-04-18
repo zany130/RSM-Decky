@@ -1,6 +1,6 @@
 # RSM-Decky
 
-RSM-Decky is a Decky Loader plugin for per-game ReShade management on Steam Deck.
+RSM-Decky is a [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for per-game [ReShade](https://reshade.me) management on Steam Deck.
 It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
 ## Related Project
@@ -9,29 +9,27 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 
 ## Current Feature Set (v1.0.0)
 
-- Per-game launch entry in the Steam library context menu
+- Per-game access via the Steam library context menu (right-click a game)
 - ReShade install/update/uninstall/check per selected game
 - Shader catalog refresh and downloaded shader repo update
 - Add custom shader repositories
-- Manage shader enable/disable selection with apply flow
+- Manage shader enable/disable selection and apply the changes to the game
 - Manage plugin add-ons with architecture-aware filtering
-
-## Status
-
-`v1.0.0` is the focused release for stable per-game ReShade, shader repository, and add-on management on Steam Deck.
 
 ## Install from Release Zip (Users)
 
-1. Download the latest `RSM-Decky` release zip.
-2. Extract it so you get a folder named `RSM-Decky`.
-3. Copy that folder to `~/homebrew/plugins/` on your Steam Deck.
-4. Restart Decky Loader (`plugin_loader`) or reboot the Deck.
+1. Download the latest `RSM-Decky` release zip from the [Releases page](https://github.com/zany130/RSM-Decky/releases).
+2. In Decky Loader, open the settings (⚙️ icon), go to **General** → **Other**, and enable **Developer Mode**.
+3. Still in settings, scroll to the **Developer** section and use **Install Plugin from ZIP File** to select the downloaded zip.
+4. Decky Loader will install the plugin automatically — no manual extraction or copying needed.
+
+> **Alternative:** In the **Developer** section you can also use **Install Plugin from URL** and paste the direct download link to the release zip instead of downloading the file manually.
 
 Expected final path:
 
 `~/homebrew/plugins/RSM-Decky`
 
-## Build / Deploy (Developers)
+## Build (Developers)
 
 Requirements:
 
@@ -46,18 +44,6 @@ pnpm install
 pnpm build
 ```
 
-Deploy to a Deck over SSH:
-
-```bash
-DECK_HOST=<deck-ip-or-hostname> DECK_USER=<user> ./scripts/deploy-deck.sh
-```
-
-Tail plugin logs on Deck:
-
-```bash
-DECK_HOST=<deck-ip-or-hostname> DECK_USER=<user> ./scripts/deck-logs.sh
-```
-
 Build end-user release zip:
 
 ```bash
@@ -66,12 +52,18 @@ Build end-user release zip:
 
 ## Data Sources
 
-- ReShade installer downloads: `reshade.me`
+- ReShade installer downloads: [reshade.me](https://reshade.me)
 - Shader repos: merged built-in repos + PCGamingWiki-derived list + user-added repos
-- Plugin add-ons: official `Addons.ini` catalog from `crosire/reshade-shaders`
+- Plugin add-ons: official `Addons.ini` catalog from [crosire/reshade-shaders](https://github.com/crosire/reshade-shaders)
+
+## Disclaimer
+
+This is a personal project built with [Cursor](https://www.cursor.com/) AI-assisted development.
+It is provided as-is with no guarantees of active maintenance.
+Issues will be looked at if they can be reproduced, or if a pull request is provided.
 
 ## Known Limitations / Caveats
 
-- v1.0.0 targets standard Steam game installs; non-Steam shortcuts may fail fast.
+- v1.0.0 targets standard Steam game installs; non-Steam shortcuts may not work correctly.
 - TLS fallback behavior may be required on some systems with broken CA trust chains.
 - Add-ons are filtered by detected game architecture; incompatible entries are hidden.
