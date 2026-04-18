@@ -7,7 +7,6 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install:decky": "bash scripts/install-local.sh",
     "build:release": "bash scripts/build-release.sh"
   },
   "repository": {
