@@ -23,9 +23,8 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 ## Install from Release Zip (Users)
 
 1. Download the latest `RSM-Decky` release zip.
-2. Extract it so you get a folder named `RSM-Decky`.
-3. Copy that folder to `~/homebrew/plugins/` on your Steam Deck.
-4. Restart Decky Loader (`plugin_loader`) or reboot the Deck.
+2. In Decky Loader, open the settings (⚙️ icon), scroll to the **Developer** section, and use **Install Plugin from ZIP File** to select the downloaded zip.
+3. Decky Loader will install the plugin automatically — no manual extraction or copying needed.
 
 Expected final path:
 
