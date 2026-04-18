@@ -27,6 +27,8 @@ It wraps `reshade-shader-manager` workflows in a controller-friendly UI.
 3. Still in settings, scroll to the **Developer** section and use **Install Plugin from ZIP File** to select the downloaded zip.
 4. Decky Loader will install the plugin automatically — no manual extraction or copying needed.
 
+> **Alternative:** In the **Developer** section you can also use **Install Plugin from URL** and paste the direct download link to the release zip instead of downloading the file manually.
+
 Expected final path:
 
 `~/homebrew/plugins/RSM-Decky`
