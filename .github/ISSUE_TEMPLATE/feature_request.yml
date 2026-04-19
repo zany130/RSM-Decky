@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest a new feature or improvement for the RSM Decky plugin.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > 💡 Before submitting, please [search existing issues](../../issues?q=is%3Aissue+label%3Aenhancement) to see if this has already been requested.
+        >
+        > This project is maintained in spare time — not all requests will be implemented.
+        >
+        > ⚠️ **Non-Steam game support is currently out of scope.** Requests for non-Steam game support will be closed.
+
+  - type: textarea
+    id: feature_description
+    attributes:
+      label: Feature Description
+      description: Clearly describe the feature or improvement you'd like to see.
+      placeholder: "e.g. Automatically back up ReShade presets before applying changes."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why Would This Be Useful?
+      description: Explain the problem this solves or the benefit it provides.
+      placeholder: "e.g. This would prevent accidental data loss when switching presets."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you tried any workarounds or considered other approaches?
+      placeholder: "e.g. Manually copying files, but that's tedious."
+    validations:
+      required: false

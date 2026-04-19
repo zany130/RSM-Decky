@@ -1,0 +1,79 @@
+name: Bug Report
+description: Report a bug with the RSM Decky plugin. Only Steam games are supported — issues involving non-Steam games are out of scope and will be closed.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > ⚠️ **Only Steam games are supported.** Issues involving non-Steam games are out of scope and will be closed without investigation.
+        >
+        > ⚠️ Steam **Beta** and **Preview** versions may break this plugin. Stable is recommended.
+        >
+        > Incomplete reports may be closed without investigation. Please fill in all required fields.
+
+  - type: dropdown
+    id: steam_version
+    attributes:
+      label: Steam Version
+      description: Which Steam release channel are you using?
+      options:
+        - Stable
+        - Beta
+        - Preview
+    validations:
+      required: true
+
+  - type: input
+    id: decky_version
+    attributes:
+      label: Decky Loader Version
+      description: Found in the Decky Loader settings (e.g. v3.0.0).
+      placeholder: "e.g. v3.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: game_name
+    attributes:
+      label: Game Name
+      description: Which Steam game is affected?
+      placeholder: "e.g. Cyberpunk 2077"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide clear, numbered steps so the issue can be reproduced.
+      placeholder: |
+        1. Open the plugin
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Screenshots
+      description: Paste relevant log output or attach screenshots. Drag and drop images here.
+      render: shell
+    validations:
+      required: false
