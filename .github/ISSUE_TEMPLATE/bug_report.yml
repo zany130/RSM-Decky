@@ -25,6 +25,24 @@ body:
       required: true
 
   - type: input
+    id: os_name
+    attributes:
+      label: OS/Distro
+      description: What operating system/distro are you using? If on steamdeck you are proably using steamos  
+      placeholder: "e.g. Steamos, Bazzite, Ubuntu, etc"
+    validations:
+      required: true
+
+  - type: input
+   id: os_version
+   attributes:
+     label: OS/Distro version
+     description: What version of the Distro/OS are you using?
+     placeholder: "e.g. v3.0.0"
+   validations:
+     required: true
+      
+  - type: input
     id: decky_version
     attributes:
       label: Decky Loader Version
@@ -40,7 +58,7 @@ body:
       description: Which Steam game is affected?
       placeholder: "e.g. Cyberpunk 2077"
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: steps
