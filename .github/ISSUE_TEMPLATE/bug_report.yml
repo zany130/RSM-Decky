@@ -28,20 +28,20 @@ body:
     id: os_name
     attributes:
       label: OS/Distro
-      description: What operating system/distro are you using? If on steamdeck you are proably using steamos  
-      placeholder: "e.g. Steamos, Bazzite, Ubuntu, etc"
+      description: What operating system/distro are you using? If on Steam Deck you are probably using SteamOS.
+      placeholder: "e.g. SteamOS, Bazzite, Ubuntu, etc"
     validations:
       required: true
 
   - type: input
-   id: os_version
-   attributes:
-     label: OS/Distro version
-     description: What version of the Distro/OS are you using?
-     placeholder: "e.g. v3.0.0"
-   validations:
-     required: true
-      
+    id: os_version
+    attributes:
+      label: OS/Distro Version
+      description: What version of the distro/OS are you using?
+      placeholder: "e.g. v3.0.0"
+    validations:
+      required: true
+
   - type: input
     id: decky_version
     attributes:
