@@ -1,4 +1,4 @@
-import { SidebarNavigation, useParams } from "@decky/ui";
+import { Tabs, useParams } from "@decky/ui";
 import { call } from "@decky/api";
 import { useEffect, useMemo, useState } from "react";
 
@@ -136,24 +136,23 @@ const RSMDeckyRoot = () => {
       {header}
       {shellReady && gameDir ? (
         <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <SidebarNavigation
-            title="RSM-Decky"
-            page={activePage}
-            onPageRequested={setActivePage}
-            pages={[
+          <Tabs
+            activeTab={activePage}
+            onShowTab={setActivePage}
+            tabs={[
               {
                 title: "ReShade",
-                identifier: "reshade",
+                id: "reshade",
                 content: <ReShadeTab gameDir={gameDir} />,
               },
               {
                 title: "Shaders",
-                identifier: "shaders",
+                id: "shaders",
                 content: <ShadersTab gameDir={gameDir} />,
               },
               {
                 title: "Add-ons",
-                identifier: "addons",
+                id: "addons",
                 content: <AddonsTab gameDir={gameDir} />,
               },
             ]}
