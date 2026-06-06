@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: manual-release
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and publish release
