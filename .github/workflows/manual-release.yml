@@ -50,10 +50,11 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
+          import os
           import re
           from pathlib import Path
 
-          expected = "${{ env.VERSION }}"
+          expected = os.environ["VERSION"]
           package_version = json.loads(Path("package.json").read_text())["version"]
           init_text = Path("py_modules/reshade_shader_manager/__init__.py").read_text()
           match = re.search(r'__version__\s*=\s*"([^"]+)"', init_text)
