@@ -50,6 +50,14 @@ Build end-user release zip:
 ./scripts/build-release.sh
 ```
 
+Publish a GitHub release when you decide it is ready:
+
+1. Ensure `package.json` and `py_modules/reshade_shader_manager/__init__.py` use the same release version.
+2. Push the release-ready commit.
+3. Open **Actions** → **Manual Release** → **Run workflow**.
+4. Enter the version exactly as it appears in the repo (for example `1.0.0`).
+5. The workflow builds `release/RSM-Decky-v<version>.zip`, creates tag `v<version>`, and publishes the GitHub release.
+
 ## Data Sources
 
 - ReShade installer downloads: [reshade.me](https://reshade.me)
